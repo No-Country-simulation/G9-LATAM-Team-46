@@ -72,3 +72,16 @@ contenido técnico.
 Se documentó el proyecto, incluyendo instrucciones de ejecución, uso de la 
 API, ejemplos de solicitud/respuesta y dependencias utilizadas (ver sección 
 "Cómo ejecutar el proyecto" más abajo).
+
+
+### 9. PARTICIPANTES:
+
+WILLMAN ALCA ALFARO
+DAVID FLETES ESPARZA
+SEBASTIAN LUGO
+EDSON ALBERTO HERRERA CERVANTES
+LUCIO FERNANDEZ CHAVEZ
+DANIEL SOTO
+HIPÓLITO PÉREZ MARTÍNEZ
+EDMER RUBIO
+
