@@ -1,0 +1,11 @@
+# No versionar datos crudos ni procesados (pueden pesar cientos de MB/GB)
+raw/*
+processed/*
+!raw/.gitkeep
+!processed/.gitkeep
+
+# Cache local de kagglehub si se llega a generar dentro del repo
+kagglehub_cache/
+
+# Checkpoints de Jupyter
+notebooks/.ipynb_checkpoints/
