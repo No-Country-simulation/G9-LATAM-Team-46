@@ -1,0 +1,34 @@
+{
+  "paquete": "Fase1_EDA_paquete_20260722",
+  "creado_utc": "2026-07-22T12:21:31.185962+00:00",
+  "contenido": {
+    "notebooks/Fase1_EDA_TechMind.ipynb": "Pipeline Fase 1",
+    "docs/arbol_conocimiento_techmind.md": "Taxonomia",
+    "data/dataset_general_v1.csv": "Corpus crudo",
+    "data/dataset_entrenamiento_v1.csv": "Corpus filtrado"
+  },
+  "metricas": {
+    "general_filas": 283,
+    "train_filas": 254,
+    "columnas": [
+      "id_fragmento",
+      "titulo_origen",
+      "categoria_l1",
+      "pagina",
+      "texto_crudo",
+      "longitud_caracteres",
+      "fecha_extraccion",
+      "hash_texto"
+    ],
+    "categorias_train": {
+      "Lenguajes_Programacion": 95,
+      "Hardware": 44,
+      "Bases_de_Datos": 33,
+      "Redes_y_Comunicaciones": 25,
+      "Inteligencia_Artificial": 21,
+      "Arquitectura": 21,
+      "Sistemas_Operativos": 15
+    }
+  },
+  "nota": "Paquete de entrega. Sin PDF fuente."
+}
