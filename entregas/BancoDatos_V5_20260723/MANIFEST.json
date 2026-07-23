@@ -1,0 +1,82 @@
+{
+  "paquete": "BancoDatos_V5_20260723",
+  "proyecto": "TechMind AI — G9-LATAM-Team-46",
+  "version_corpus": "v5",
+  "creado_utc": "2026-07-23T01:16:20.706816+00:00",
+  "estado": "listo_local_no_enviado",
+  "contenido": {
+    "data/dataset_general_v5.csv": "Corpus completo V5 (PDF + aumentos v2–v5)",
+    "data/dataset_entrenamiento_v5.csv": "Subconjunto train V5 (filtro de longitud)",
+    "docs/arbol_conocimiento_v5_completo.md": "Taxonomía completa fusionada hasta V5",
+    "docs/VERIFICACION_arbol_vs_datasets_v5.md": "Checklist de coherencia árbol vs datasets",
+    "DICCIONARIO_DATOS.md": "Schema DocumentoFragmento + notas V5",
+    "CHECKSUMS.sha256": "Integridad SHA-256",
+    "MANIFEST.json": "Metadatos y métricas",
+    "README.md": "Instrucciones de uso"
+  },
+  "schema": [
+    "id_fragmento",
+    "titulo_origen",
+    "categoria_l1",
+    "pagina",
+    "texto_crudo",
+    "longitud_caracteres",
+    "fecha_extraccion",
+    "hash_texto"
+  ],
+  "metricas": {
+    "general_filas": 530,
+    "train_filas": 477,
+    "categorias_general": {
+      "Lenguajes_Programacion": 116,
+      "Hardware": 99,
+      "Arquitectura": 97,
+      "Bases_de_Datos": 68,
+      "Inteligencia_Artificial": 61,
+      "Sistemas_Operativos": 50,
+      "Redes_y_Comunicaciones": 39
+    },
+    "categorias_train": {
+      "Lenguajes_Programacion": 112,
+      "Hardware": 98,
+      "Arquitectura": 74,
+      "Inteligencia_Artificial": 60,
+      "Sistemas_Operativos": 48,
+      "Bases_de_Datos": 46,
+      "Redes_y_Comunicaciones": 39
+    },
+    "ratio_max_min_train": 2.872,
+    "origenes_titulo": {
+      "augment_balanceo_v2": 105,
+      "Tkinter_Fundamental.pdf": 56,
+      "augment_rama_hardware_arquitectura_v3": 52,
+      "Módulo 1 y 2 Fundamentos de Hardware.pdf": 47,
+      "augment_rama_ia_texto_ml_v5": 46,
+      "Java_Fundamental.pdf": 44,
+      "augment_rama_ciberseguridad_v4": 44,
+      "SQL_Fundamental.pdf": 33,
+      "Fundamentos de Redes y TCP.pdf": 25,
+      "Manual de Estrategia y Control.pdf": 21,
+      "IntroducciónPython_AnálisisDatos.pdf": 16,
+      "Guía Técnica de Oracle Virtual Machine.pdf": 15,
+      "Optimizando FMs.pdf": 13,
+      "VisualizaciónInterpretacióndeDatos.pdf": 9,
+      "Limpieza y Optimización de Datos en Pandas.pdf": 4
+    },
+    "composicion_por_etapa": {
+      "pdf_original": 283,
+      "augment_balanceo_v2": 105,
+      "augment_rama_hardware_arquitectura_v3": 52,
+      "augment_rama_ciberseguridad_v4": 44,
+      "augment_rama_ia_texto_ml_v5": 46
+    }
+  },
+  "cadena": "original(PDFs/v1) → v2 balanceo → v3 Hardware arch. → v4 Ciberseguridad → v5 IA texto/ML",
+  "checksums_sha256": {
+    "data/dataset_general_v5.csv": "088862d59c6fdcf0b01adb0ad201e7a8515baab50861321685a192cef9063aae",
+    "data/dataset_entrenamiento_v5.csv": "c44acc413948e3b90a10fa05728701fb4ec009baad53c5fc1dbabe4b92c49543",
+    "docs/arbol_conocimiento_v5_completo.md": "e3d2a896ad401633e5ff0ce57b5c586557f26749a8d7a4a6c6aac2fee75fbb39",
+    "docs/VERIFICACION_arbol_vs_datasets_v5.md": "284d7b7df6758d0b7a8bdedd2273ff3c66615018afbe749b1fe78b656fb7f133"
+  },
+  "nota": "Banco de datos V5. Sin PDF fuente. No enviar hasta solicitud explícita del equipo."
+}
