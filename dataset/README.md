@@ -1,46 +1,21 @@
-# Dataset — TechMind AI
+Diagnóstico inicial del data set
 
-Carpeta dedicada a la **Etapa 2 (Construcción del Dataset)** y **Etapa 3 (Exploración y Preparación)** del proyecto. Aquí se extraen, perfilan y preparan los datos que alimentarán el modelo de clasificación de contenido técnico.
+Tiene un tamaño de 36714 filas con 6 columnas, lo cual nos ayuda para entrenar nuestro modelo y los resultados sean favorables para el proyecto.
 
-## Estructura
+Viendo la informacion del dataset corroboramos que las columnas “título”, “texto”, “categoría”,”fuente” y “tags” no tienen valores nulos lo cual nos permite trabajar de forma óptima con estas columnas, a diferencia de la columna calidad que tiene 25574 registros correctos y 11140 filas que tienen un valor null.
 
-```
-dataset/
-├── notebooks/
-│   └── 01_extraccion_datasets.ipynb   # Extracción desde Kaggle + perfilado de cada dataset
-├── raw/                               # Datos crudos descargados (no versionado en git)
-├── processed/                         # Datos limpios/listos para entrenamiento (no versionado en git)
-├── .gitignore                         # Excluye contenido de raw/ y processed/
-└── README.md
-```
+Sin embargo, la columna numérica de “calidad” presenta 11,140 valores faltantes (30.35%), para no desechar todos los registros de texto que carecen de calificación, se optó por no eliminar estos registros del dataset general ya que no aportan algún valor al análisis que requerimos, dentro de esta columna pero si los registros de las que depende las demás columnas.
 
-`raw/` y `processed/` se mantienen vacíos en git (solo con `.gitkeep`) porque los datasets pueden pesar cientos de MB. Cada integrante debe generarlos localmente ejecutando el notebook.
+Se analizó la frecuencia de las variables categóricas y se observa que las categorías y fuentes se repiten de manera natural agrupando el contenido del dataset, esto indica que el dataset cuenta con una representación estructurada por temas.
 
-## Datasets candidatos
+Aplicamos el conteo por categoría para analizar la distribución que contiene el dataset, en las primeras 6 categorías tiene 5000 registros lo que significa que el dataset es altamente balanceado en sus categorías principales.
+Las dos últimas categorías caen en cantidad que se refleja en base de datos y seguridad, lo cual nos crea un ligero desequilibrio o caída en estas dos áreas específicas, no es un error crítico pero se debe mencionar para el análisis.
 
-| # | Dataset (Kaggle) | Contenido | Rol propuesto |
-|---|---|---|---|
-| 1 | `stackoverflow/stacksample` | Preguntas/respuestas de Stack Overflow con tags | Fuente principal de contenido técnico ya etiquetado por tecnología |
-| 2 | `fabiochiusano/medium-articles` | Artículos largos de Medium con tags | Contenido tipo "artículo/tutorial" para diversificar categorías |
-| 3 | `hsankesara/medium-articles` | Artículos de Medium (dataset más pequeño) | Alternativa/complemento al anterior, útil para pruebas rápidas |
-| 4 | `kutayahin/stackoverflow-programming-questions-2020-2025` | Preguntas recientes de Stack Overflow (2020-2025) | Reduce sesgo hacia tecnologías antiguas del StackSample original |
-| 5 | `sunilthite/text-document-classification-dataset` | Documentos genéricos ya categorizados | Baseline/referencia para validar el pipeline de clasificación |
+Al analizar la distribución de la variable categoría se observa que el dataset cuenta con 8 categorías en total 6 de ellas completamente balanceadas con 5000 registros, no obstante las categorías de base de datos y seguridad presentan una representación ligeramente menor con 4140 y 2574 respectivamente lo cual constituye un sesgo menor en la distribución que deberá considerarse al momento de evaluar el rendimiento del modelo por clase 
 
-## Cómo usar
+MEJORAS
+Respecto al análisis de longitud de documentos en palabras, se observa una diferencia entre los títulos y los textos principales. Los títulos mantienen un comportamiento igual con un promedio de 9.6 palabras. Por su parte, los textos principales presentan una media de 351 palabras, pero con una alta desviación estándar (510.8 palabras) y un rango que va desde las 15 hasta las 3,740 palabras. Con esto se puede concluir que la mayoría de los registros se concentran en tamaños medianos.
 
-1. Instalar dependencias:
-   ```bash
-   pip install kagglehub[pandas-datasets] pandas
-   ```
-2. Configurar credenciales de Kaggle (`kaggle.json` en `~/.kaggle/` o `kagglehub.login()`).
-3. Abrir `notebooks/01_extraccion_datasets.ipynb` y ejecutar las celdas. Cada dataset se carga, se perfila (shape, columnas, nulos, muestra) y se agrega a una tabla comparativa al final.
-4. Con la tabla comparativa, decidir qué dataset(s) usar como base para el modelo (ver criterios al final del notebook).
-5. Guardar el subconjunto elegido (crudo) en `raw/` y, tras la limpieza de la Etapa 3, el resultado en `processed/`.
-
-## Próximos pasos (Etapa 3)
-
-- Limpieza de texto y normalización.
-- Eliminación de duplicados y stopwords.
-- Tokenización.
-- Análisis de distribución de categorías/tags.
-- Preparación del dataset final de entrenamiento.
+Tratamiento de la variable calidad: Para futuros modelos predictivos que dependan de esta métrica, se recomienda aislar los 25,574 registros calificados o aplicar una estrategia de imputación basada en segmentación por fuente (ya que los nulos se concentran en Medium). Para tareas generales de NLP, se aconseja conservar el dataset íntegro de 36,714 filas ignorando dicha columna.
+Mitigación del desequilibrio menor: Aunque el dataset está mayormente balanceado, se sugiere aplicar técnicas de aumento de datos (data augmentation) o ponderación de clases (class weights) para las categorías de Bases de Datos y Seguridad al momento de entrenar clasificadores.
+Estandarización de textos largos: Evaluar un filtrado o truncamiento de los documentos extremadamente largos (valores atípicos superiores al percentil 95) para optimizar el rendimiento computacional durante la vectorización de texto en fases de Machine Learning.
