@@ -1,15 +1,29 @@
-Operaciones de preparación de los datos para aplicar modelos. (modelado.ipynb)
+# TechMind - Machine Learning
 
-1.- Limpieza.
-1.1-Normalización de minúsculas:
-Se convierte todo el texto en minúsculas para evitar que los conceptos principales se    traten como términos diferentes. Se aplica la función limpiar.
+Sistema de Procesamiento de Lenguaje Natural (PLN) y Machine Learning diseñado para clasificar automáticamente artículos y preguntas técnicas en sus respectivas áreas de especialización (*Backend, Bases de Datos, Ciencia de Datos, DevOps / Cloud, Frontend, Mobile, Programación General y Seguridad*).
 
-1.2- String a la columna ‘Texto limpio’.
-Se convierte la columna donde se tiene limpio el texto a string para poder utilizarlo y poder aplicar el primer modelo.
+---
 
-2.-Vectorizar con modelo IT-IDF.
-Para evitar las palabras o letras que son conocidas como palabras vacías, que no aportan un significado relevante al tema principal de un texto, se realizó una lista con los probables artículos , preposiciones, conjunciones etc. para poder evitarlas en el modelo.
+##  Características del Proyecto
+- **Limpieza avanzada de texto:** Expresiones regulares personalizadas para normalización y conservación de términos técnicos cortos (`go`, `js`, `ai`, `ml`, etc.).
+- **Ingeniería de Características:** Extracción de n-gramas (unigramas y bigramas) y ponderación mediante **TF-IDF**.
+- **Procesamiento explícito (Sin Pipeline):** Aplicación manual y controlada de **TF-IDF** separando los conjuntos de entrenamiento y prueba para evitar fugas de datos (*data leakage*).
+- **Modelado comparativo:** Implementación y evaluación de **Regresión Logística** (con manejo de clases desbalanceadas mediante `class_weight='balanced'`) y **Naive Bayes**.
+- **Optimización automática:** Búsqueda de hiperparámetros mediante **GridSearchCV** y validación cruzada.
+- **Evaluación exhaustiva:** Cálculo de métricas (*Accuracy, Precision, Recall, F1-Score*) y generación de **Matrices de Confusión**.
 
-3.- Regresión Logística.
-Al obtener los resultados de la matriz, que en este caso referimos como “x_tfidf”, (X) como variables independientes, para (y) voy a utilizar la columna “categoria_l1” la cual nos indica a qué categoría pertenece cada texto.
-Para poder aplicar la regresión, los datos se dividen en un 80% para entrenar al modelo y con el 20% haremos las pruebas.
+
+
+##  Resultados y Rendimiento
+* **Exactitud Global (Accuracy):** ~75.35% en el modelo base de Regresión Logística.
+* **Estabilidad:** El modelo optimizado mediante `GridSearchCV` ofrece un rendimiento muy robusto y consistente.
+* **Clase mejor desempeñada:** *Mobile* (Precisión de 0.86), gracias a la fuerte diferenciación de su vocabulario técnico.
+
+
+
+##  Requisitos e Instalación
+
+Asegúrate de tener Python instalado junto con las siguientes librerías de Machine Learning y Ciencia de Datos:
+
+```bash
+pip install pandas numpy scikit-learn matplotlib
