@@ -1,6 +1,6 @@
 # models/
 
-Modelo y vectorizador, entrenados por el equipo de modelado
+Modelo y vectorizador **reales**, entrenados por el equipo de modelado
 y confirmados como versión final del hackatón:
 
 - `modelo_techmind_v1.joblib` — Regresión Logística (`modelo_lr`,

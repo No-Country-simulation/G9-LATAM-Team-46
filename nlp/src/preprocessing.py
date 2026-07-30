@@ -6,7 +6,7 @@ Contiene dos familias de funciones con propósitos distintos:
 1. `limpiar_texto()` — réplica EXACTA de la función `limpiar()` del
    notebook de modelado. Es la que se debe usar antes de vectorizar
    texto para clasificación, porque el TfidfVectorizer fue entrenado
-   sobre texto procesado exactamente así (minúsculas, regex simple,
+   sobre texto procesado exactamente así: (minúsculas, regex simple,
    sin lematizar). Cualquier diferencia puede generar vectores que el
    modelo no interpreta correctamente.
 

@@ -1,6 +1,6 @@
 """
-Valida que el modelo y el vectorizador entrenados
-se puedan cargar correctamente y que la inferencia funcione
+Valida que el modelo y el vectorizador entrenados por el equipo de
+modelado se puedan cargar correctamente y que la inferencia funcione
 como se espera.
 
 Uso:
@@ -19,8 +19,8 @@ CATEGORIAS_ESPERADAS = {
     "Frontend", "Mobile", "Programación General", "Seguridad",
 }
 
-# Textos de prueba pensados para "apuntar" claramente a una categoría,
-# así podemos ver a simple vista si la predicción tiene sentido.
+# Textos de prueba que "apuntan" hacia una categoría,
+# así podemos ver si la predicción tiene sentido.
 TEXTOS_DE_PRUEBA = [
     "how to configure a rest api endpoint with jwt authentication",
     "writing an efficient sql join query with indexes",
