@@ -1,0 +1,17 @@
+# --- Datos y modelo (deben coincidir con la versión usada por el equipo de modelado) ---
+pandas==2.2.2
+scikit-learn==1.6.1
+joblib==1.4.2
+
+# --- Preprocesamiento de texto (tokenización, stopwords, lematización) ---
+nltk==3.8.1
+
+# --- Extracción de palabras clave ---
+yake==0.4.8
+
+# --- Pruebas ---
+pytest==8.2.0
+
+# NOTA: scikit-learn==1.6.1 confirmado por el InconsistentVersionWarning al
+# cargar el .joblib real (indicaba que fue entrenado con esa versión). Si el
+# equipo de modelado reentrena con otra versión, actualizar esta línea.
