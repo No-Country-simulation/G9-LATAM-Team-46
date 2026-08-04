@@ -1,0 +1,21 @@
+# Datos runtime en la raíz del repo (PDF privados, CSV de trabajo local)
+# Usar "/data/" (solo raíz). NO usar "data/" suelto: ignora también entregas/**/data/
+/data/
+/model/artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Entorno local EDA / Jupyter
+.venv-eda/
+.venv/
+
+# IDE local
+.vscode/

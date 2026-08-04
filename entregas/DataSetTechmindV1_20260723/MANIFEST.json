@@ -1,0 +1,34 @@
+{
+  "paquete": "DataSetTechmindV1_20260723",
+  "dataset": "DataSetTechmindV1.csv",
+  "filas": 668,
+  "sha256": "499fa5a1e122bf3a5ffdca83c0a5f6911a91ae9faae349d02c48d97ed3fc6cd1",
+  "composicion": {
+    "nativo": 343,
+    "sintetico": 38,
+    "ocr": 287
+  },
+  "l1": {
+    "Lenguajes_Programacion": 138,
+    "Inteligencia_Artificial": 129,
+    "Arquitectura": 128,
+    "Redes_y_Comunicaciones": 124,
+    "Hardware": 63,
+    "Bases_de_Datos": 49,
+    "Sistemas_Operativos": 37
+  },
+  "ratio_max_min": 3.72972972972973,
+  "archivos": [
+    "data/DataSetTechmindV1.csv",
+    "data/DataSetTechmindV1_entrenamiento.csv",
+    "data/DataSetTechmindV1.DATASHEET.md",
+    "data/DataSetTechmindV1.ARBOL.md",
+    "docs/DataSetTechmindV1.DATASHEET.md",
+    "docs/DataSetTechmindV1.ARBOL.md",
+    "README.md",
+    "MANIFEST.json",
+    "CHECKSUMS.sha256"
+  ],
+  "estado": "listo_local_no_enviado",
+  "creado_utc": "2026-07-23T13:04:39.729797+00:00"
+}
