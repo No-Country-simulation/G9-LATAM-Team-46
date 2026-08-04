@@ -1,0 +1,2 @@
+# El dataset se versiona tal cual, sin conversión de saltos de línea (evita corromperlo)
+dataset/processed/techmind_dataset_v2.csv -text
