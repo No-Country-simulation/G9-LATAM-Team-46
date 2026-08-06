@@ -3,6 +3,9 @@ raw/*
 processed/*
 !raw/.gitkeep
 !processed/.gitkeep
+# Excepción: el dataset bilingüe final SÍ se versiona para que todo el equipo lo tenga
+!processed/techmind_dataset_v2.csv
+!processed/README.md
 
 # Cache local de kagglehub si se llega a generar dentro del repo
 kagglehub_cache/
