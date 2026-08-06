@@ -1,10 +1,11 @@
-def cargar_modelo():
-    """
-    Mock temporal. Cuando Persona 5 me entregue el modelo real (.joblib),
-    esta función la reemplazo por la carga real:
+from pathlib import Path
 
-    import joblib
-    modelo = joblib.load("ruta/al/modelo.joblib")
-    return modelo
-    """
-    return "modelo_mock_temporal"
+import joblib
+
+RUTA_MODELO = Path(__file__).resolve().parent / "modelo_techmind_v2.joblib"
+
+
+def cargar_modelo():
+    if not RUTA_MODELO.exists():
+        return None
+    return joblib.load(RUTA_MODELO)
