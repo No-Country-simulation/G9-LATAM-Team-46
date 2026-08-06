@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.core.config import settings
-from app.routers import health, contenido
+from app.routers import health, contenido, categorias
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -16,6 +16,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(contenido.router)
+app.include_router(categorias.router)
 
 
 @app.exception_handler(Exception)
