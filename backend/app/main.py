@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.routers import health, contenido, categorias
+from app.ml.loader import cargar_modelo
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
@@ -17,6 +18,10 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(contenido.router)
 app.include_router(categorias.router)
+
+@app.on_event("startup")
+def iniciar_modelo():
+    cargar_modelo()
 
 
 @app.exception_handler(Exception)
