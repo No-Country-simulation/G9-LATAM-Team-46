@@ -1,26 +1,59 @@
 # models/
 
-Modelo y vectorizador **reales**, entrenados por el equipo de modelado
-y confirmados como versión final del hackatón:
+Modelo **real** entrenado por el equipo de modelado, versión final del
+hackatón.
 
-- `modelo_techmind_v1.joblib` — Regresión Logística (`modelo_lr`,
-  `class_weight='balanced'`, `max_iter=1000`), accuracy 0.7535 en test.
-  Se comparó contra Naive Bayes (0.6964, descartado) y una versión
-  optimizada con GridSearchCV (0.7521, sin mejora significativa) —
-  se eligió el modelo original por ser igual de bueno y más simple.
-- `vectorizador_tfidf_v1.joblib` — TfidfVectorizer (`max_features=5000`,
-  `stop_words='english'`, `ngram_range=(1, 2)`, `min_df=3`).
+- `modelo_techmind_v2.joblib` — un único `Pipeline` de scikit-learn
+  serializado (~6.4 MB), entrenado con el dataset bilingüe (inglés +
+  español). Reemplaza los dos archivos del v1.
+  - `TfidfVectorizer`: `ngram_range=(1, 2)`, `sublinear_tf=True`,
+    `min_df=3`, `max_features=60000`, lista de stopwords bilingüe
+    ampliada (678 términos).
+  - `LogisticRegression`: `C=4.0`, `max_iter=1000`,
+    `class_weight='balanced'`.
+  - Accuracy **0.7751** sobre test estratificado de 7.658 textos.
+    F1 por categoría entre 0.65 (Backend) y 0.88 (Mobile).
+
+El modelo entregado se re-entrenó con el 100 % del dataset; el accuracy
+de arriba se midió con el modelo entrenado sobre el 80 %.
+
+## Por qué un solo archivo
+
+El v1 eran dos artefactos (`modelo` + `vectorizador`) que había que
+cargar y coordinar por separado, con el riesgo de emparejar versiones
+que no se correspondían. Un `Pipeline` los encapsula: se carga una vez
+y no puede desincronizarse.
+
+## Requisitos que valida el pipeline al cargar
+
+`RepositorioModelo` rechaza el `.joblib` con `ModeloInvalidoError` si no
+cumple. Un modelo nuevo debe:
+
+- Ser un `sklearn.pipeline.Pipeline` **entrenado** (tiene `classes_`).
+- Exponer **`predict_proba`** — se usa para el campo `probabilidad` y
+  para elegir la categoría alternativa. Un `LinearSVC` no sirve tal
+  cual; habría que envolverlo en `CalibratedClassifierCV`.
+- Tener el vectorizador en un paso llamado exactamente **`tfidf`**.
+- Haber sido entrenado con texto procesado por una función de limpieza
+  **idéntica** a `src/cleaning.py`.
 
 ## Compatibilidad de versiones
 
-Entrenados con `scikit-learn==1.6.1` — esta versión ya está fijada en
-`requirements.txt`. Si cargas el modelo con una versión distinta,
-verás un `InconsistentVersionWarning`; si eso pasa, reinstala el
+Entrenado con `scikit-learn==1.6.1`, fijado en `requirements.txt` junto
+con `numpy` y `scipy`. Numpy va fijado a propósito: el `.joblib` es un
+pickle con arreglos serializados por numpy 2.x, y cargarlo con numpy 1.x
+falla con `No module named 'numpy._core'`.
+
+Si al cargar aparece un `InconsistentVersionWarning`, reinstala el
 entorno con `pip install -r requirements.txt` en Python 3.12.
 
 ## Validación
 
-Corre `python scripts/validar_modelo.py` para confirmar que ambos
-archivos cargan correctamente y que las predicciones son coherentes.
-Última corrida: las 8 categorías detectadas correctamente, sin
-warnings de versión.
+```bash
+python scripts/validar_modelo.py
+```
+
+Comprueba que el `.joblib` cargue, que las 8 categorías coincidan con
+las esperadas y que la inferencia funcione en ambos idiomas. Última
+corrida: carga OK, 8/8 categorías, cuatro casos de prueba acertados con
+confianza entre 0.794 y 0.999.
