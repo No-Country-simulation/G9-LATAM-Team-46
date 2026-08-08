@@ -1,126 +1,57 @@
 """
-Módulo de preprocesamiento de texto.
+Limpieza de texto — réplica exacta de la función `limpiar()` del
+notebook de modelado v2.
 
-Contiene dos familias de funciones con propósitos distintos:
+Este módulo tiene una única responsabilidad: convertir texto crudo en
+texto limpio. No sabe nada del modelo, de palabras clave, ni de cómo
+se usa el resultado — eso lo mantiene fácil de probar de forma aislada
+y reutilizable en cualquier contexto (entrenamiento, inferencia, scripts
+de análisis).
 
-1. `limpiar_texto()` — réplica EXACTA de la función `limpiar()` del
-   notebook de modelado. Es la que se debe usar antes de vectorizar
-   texto para clasificación, porque el TfidfVectorizer fue entrenado
-   sobre texto procesado exactamente así: (minúsculas, regex simple,
-   sin lematizar). Cualquier diferencia puede generar vectores que el
-   modelo no interpreta correctamente.
-
-2. `tokenizar()`, `eliminar_stopwords()`, `lematizar()` — utilidades de
-   NLP más completas, pensadas para el módulo de extracción de
-   palabras clave (Bloque 3), NO para el pipeline de clasificación
-   (el TfidfVectorizer ya elimina stopwords en inglés internamente
-   con stop_words='english').
+IMPORTANTE: la función `limpiar_texto()` debe ser una réplica exacta de
+la usada para entrenar el modelo. El `TfidfVectorizer` fue ajustado
+sobre texto procesado exactamente así — cualquier diferencia (por
+mínima que sea) puede generar vectores distintos a los que el modelo
+aprendió a interpretar.
 """
 
 import re
-from typing import List
 
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
+from src.config import LONGITUD_MINIMA_PALABRA
 
-# Términos técnicos cortos que no deben filtrarse aunque tengan <=2
-# caracteres. DEBE mantenerse idéntico al usado en el notebook de
-# modelado (ver limpiar()) para no romper la compatibilidad con el
-# vectorizador TF-IDF ya entrenado.
-TERMINOS_CORTOS = {
-    'r', 'c', 'go', 'js', 'ts', 'ai', 'ml', 'db', 'ui', 'ux',
-    'os', 'qa', 'ci', 'cd', 'vm', 'C++', 'C#',
-}
-
-_lematizador = WordNetLemmatizer()
+# Los patrones se compilan una sola vez a nivel de módulo (no en cada
+# llamada) por eficiencia — limpiar_texto() se invoca en cada request
+# de la API.
+_PATRON_SALTOS = re.compile(r"[\n\t\r]+")
+_PATRON_URL = re.compile(r"http\S+|www\S+|https\S+", flags=re.MULTILINE)
+_PATRON_DIGITOS = re.compile(r"\d+")
+_PATRON_NO_ALFANUMERICO = re.compile(r"[^áéíóúüñA-Za-z0-9\s]")
+_PATRON_ESPACIOS = re.compile(r"\s+")
 
 
 def limpiar_texto(texto: str) -> str:
-    """Réplica exacta de la función limpiar() del equipo de modelado.
+    """Limpia un texto crudo con el mismo criterio usado para entrenar
+    el modelo v2: minúsculas, sin URLs, sin números, sin puntuación,
+    sin palabras de longitud menor o igual a `LONGITUD_MINIMA_PALABRA`.
 
     Args:
-        texto: Texto crudo (título o cuerpo del contenido).
+        texto: Texto crudo de entrada. Cualquier valor que no sea `str`
+            se trata como texto vacío (ver Returns).
 
     Returns:
-        Texto limpio: minúsculas, sin URLs/números/puntuación, sin
-        tokens de <=2 caracteres salvo los de TERMINOS_CORTOS.
+        Texto limpio y normalizado, listo para pasar al vectorizador.
+        Devuelve cadena vacía si `texto` no es un `str` o si no queda
+        ninguna palabra después de la limpieza.
     """
     if not isinstance(texto, str):
         return ""
 
     texto = texto.lower()
-    texto = re.sub(r'[\n\t\r]+', ' ', texto)
-    texto = re.sub(r'http\S+|www\.\S+', '', texto)
-    texto = re.sub(r'\d+', ' ', texto)
-    texto = re.sub(r'[^a-záéíóúüñ\s]', ' ', texto)
-    texto = re.sub(r'\s+', ' ', texto)
+    texto = _PATRON_SALTOS.sub(" ", texto)
+    texto = _PATRON_URL.sub("", texto)
+    texto = _PATRON_DIGITOS.sub(" ", texto)
+    texto = _PATRON_NO_ALFANUMERICO.sub(" ", texto)
+    texto = _PATRON_ESPACIOS.sub(" ", texto)
 
-    palabras = [p for p in texto.split() if len(p) > 2 or p in TERMINOS_CORTOS]
+    palabras = [p for p in texto.split() if len(p) > LONGITUD_MINIMA_PALABRA]
     return " ".join(palabras).strip()
-
-
-def tokenizar(texto: str) -> List[str]:
-    """Divide el texto en una lista de tokens (palabras).
-
-    Pensada para el módulo de extracción de palabras clave (Bloque 3),
-    no para el pipeline de clasificación.
-
-    Args:
-        texto: Texto (crudo o ya limpio con limpiar_texto).
-
-    Returns:
-        Lista de tokens.
-    """
-    return word_tokenize(texto, language='english')
-
-
-def eliminar_stopwords(tokens: List[str], idioma: str = 'english') -> List[str]:
-    """Elimina palabras vacías (stopwords) de una lista de tokens.
-
-    NOTA: el TfidfVectorizer del modelo ya elimina stopwords en inglés
-    internamente, así que esta función no se aplica antes de clasificar.
-    Se usa para el módulo de extracción de palabras clave (Bloque 3).
-
-    Args:
-        tokens: Lista de tokens.
-        idioma: Idioma de las stopwords a usar (default 'english').
-
-    Returns:
-        Lista de tokens sin stopwords.
-    """
-    stop_set = set(stopwords.words(idioma))
-    return [t for t in tokens if t.lower() not in stop_set]
-
-
-def lematizar(tokens: List[str]) -> List[str]:
-    """Reduce cada token a su forma base (lema), usando WordNetLemmatizer.
-
-    Pensada para el módulo de extracción de palabras clave (Bloque 3).
-
-    Args:
-        tokens: Lista de tokens (idealmente sin stopwords).
-
-    Returns:
-        Lista de tokens lematizados.
-    """
-    return [_lematizador.lemmatize(t) for t in tokens]
-
-
-def preparar_para_keywords(texto: str) -> List[str]:
-    """Pipeline auxiliar: limpia -> tokeniza -> quita stopwords -> lematiza.
-
-    Pensado para alimentar el módulo de extracción de palabras clave
-    (Bloque 3). No se usa en el pipeline de clasificación.
-
-    Args:
-        texto: Texto crudo (título o cuerpo del contenido).
-
-    Returns:
-        Lista de tokens lematizados, sin stopwords.
-    """
-    texto_limpio = limpiar_texto(texto)
-    tokens = tokenizar(texto_limpio)
-    tokens = eliminar_stopwords(tokens)
-    tokens = lematizar(tokens)
-    return tokens
