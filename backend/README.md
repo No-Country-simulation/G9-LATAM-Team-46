@@ -4,7 +4,7 @@ API REST del proyecto TechMind AI (Hackathon ONE G9). Clasifica contenido técni
 
 ## Instalación y ejecución local
 
-```bash
+\`\`\`bash
 # 1. Entrar a la carpeta del backend
 cd backend
 
@@ -18,55 +18,40 @@ source venv/bin/activate     # Mac/Linux
 # 4. Instalar dependencias
 pip install -r requirements.txt
 
-# 5. Levantar el servidor
+# 5. Configurar variables de entorno
+# Copiar .env.example a .env y completar con los valores reales
+# (pedir credenciales de MySQL al equipo)
+
+# 6. Levantar el servidor
 uvicorn app.main:app --reload
-```
+\`\`\`
 
 Documentación interactiva (Swagger): `http://127.0.0.1:8000/docs`
 
 ## Estructura del proyecto
 
-```
+\`\`\`
 backend/
 ├── app/
-│   ├── main.py              # Punto de entrada, junta todos los routers
+│   ├── main.py                  # Punto de entrada, junta routers, configura CORS
 │   ├── core/
-│   │   └── config.py        # Configuración general de la app
+│   │   ├── config.py            # Configuración general
+│   │   └── database.py          # Conexión a MySQL (SQLAlchemy + PyMySQL)
 │   ├── routers/
-│   │   ├── health.py        # GET /health
-│   │   └── contenido.py     # POST /contenido
+│   │   ├── health.py            # GET /health
+│   │   ├── categorias.py        # GET /categorias
+│   │   └── contenido.py         # POST /contenido
 │   ├── schemas/
-│   │   └── contenido.py     # Contratos de entrada/salida (Pydantic)
+│   │   └── contenido.py         # Contratos de entrada/salida (Pydantic)
 │   ├── services/
-│   │   └── clasificador.py  # Lógica de negocio
+│   │   └── clasificador.py      # Lógica de clasificación con modelo real
 │   └── ml/
-│       └── loader.py        # Punto donde se carga el modelo (.joblib)
+│       ├── loader.py            # Carga real del modelo (.joblib) vía joblib.load()
+│       └── preprocesamiento.py  # Función limpiar(), igual a la del notebook de entrenamiento
 ├── tests/
 ├── requirements.txt
 └── .gitignore
-```
-
-### Por qué está dividido así
-
-Cada carpeta tiene una única responsabilidad, así que cuando algo cambia, se sabe exactamente dónde tocar:
-
-- **`routers/`** — recibe la petición HTTP y delega. No contiene lógica de negocio.
-- **`schemas/`** — el contrato de datos. Si algo no calza con el schema, ni siquiera llega al código.
-- **`services/`** — la lógica real (qué hacer con el contenido). Es lo que cambia cuando llegue el modelo real.
-- **`ml/`** — el punto exacto donde se "enchufa" el modelo entrenado por el equipo de Ciencia de Datos.
-
-## Conceptos clave (para repaso)
-
-| Concepto | Qué es | Dónde se usa |
-|---|---|---|
-| `venv` | Entorno aislado de dependencias, propio de cada proyecto | Toda la instalación local |
-| Paquete (`__init__.py`) | Le dice a Python que una carpeta es importable como módulo | `routers/`, `schemas/`, `services/`, `ml/` |
-| Decorador (`@algo`) | Envuelve una función y le agrega comportamiento | `@router.post("/contenido")` |
-| Type hints (`: str`, `-> dict`) | Anotaciones de tipo que FastAPI usa para validar y documentar | Todas las funciones y schemas |
-| Pydantic (`BaseModel`) | Convierte atributos con tipo en reglas de validación automática | `schemas/contenido.py` |
-| `HTTPException` | Errores HTTP controlados y explícitos, en vez de errores crudos de Python | `services/clasificador.py` |
-| `field_validator` | Validación personalizada sobre un campo específico | Validador de espacios en blanco en `titulo`/`texto` |
-| `exception_handler` | Captura global de errores no previstos | `main.py` |
+\`\`\`
 
 ## Endpoints
 
@@ -74,41 +59,71 @@ Cada carpeta tiene una única responsabilidad, así que cuando algo cambia, se s
 Verifica que el servidor está corriendo.
 
 **Respuesta:**
-```json
+\`\`\`json
 { "status": "ok" }
-```
+\`\`\`
+
+### `GET /categorias`
+Devuelve las categorías reales que el modelo aprendió (lee `modelo.classes_` en vivo, no hardcodeado).
+
+**Respuesta:**
+\`\`\`json
+{
+  "categorias": ["Backend", "Bases de Datos", "Ciencia de Datos", "DevOps/Cloud", "Frontend", "Mobile", "Programación General", "Seguridad"]
+}
+\`\`\`
 
 ### `POST /contenido`
-Clasifica un contenido técnico (actualmente con lógica mock, pendiente integración del modelo real de Persona 5).
+Clasifica un contenido técnico usando el modelo real (TF-IDF + Regresión Logística, entrenado sobre dataset bilingüe de ~38k filas, accuracy ~77.9%).
 
 **Entrada:**
-```json
+\`\`\`json
 {
   "titulo": "Introducción a FastAPI",
   "texto": "En este contenido se presentan los conceptos básicos para crear APIs REST con Python."
 }
-```
+\`\`\`
 
 **Respuesta (200):**
-```json
+\`\`\`json
 {
   "categoria": "Backend",
-  "probabilidad": 0.87,
-  "informacion_adicional": ["Python", "FastAPI", "API REST"]
+  "probabilidad": 0.91,
+  "informacion_adicional": ["python", "fastapi", "api", "rest"]
 }
-```
+\`\`\`
 
 **Validaciones:**
-- `titulo` y `texto` son obligatorios y no pueden estar vacíos ni contener solo espacios en blanco (`422 Unprocessable Entity`).
-- Si el modelo de clasificación no está disponible, responde `503 Service Unavailable`.
+- `titulo` y `texto` son obligatorios, no pueden estar vacíos ni contener solo espacios en blanco (`422 Unprocessable Entity`).
+- Si el modelo no está disponible, responde `503 Service Unavailable`.
+
+## CORS
+
+Configurado para aceptar los puertos comunes de desarrollo de React:
+- `http://localhost:3000` (Create React App)
+- `http://localhost:5173` (Vite)
+
+## Variables de entorno necesarias (`.env`)
+
+\`\`\`
+DB_USER=...
+DB_PASSWORD=...
+DB_HOST=...
+DB_NAME=...
+\`\`\`
+
+Ver `.env.example` para la plantilla sin valores reales.
+
+## Notas importantes
+
+- El modelo (`.joblib`, ~71 MB) **no está en el repo** — está en `.gitignore` por peso. Plan: alojarlo en OCI Object Storage, la API lo descarga al arrancar (en desarrollo).
+- La versión de `scikit-learn` está fijada en `requirements.txt` (`==1.4.1.post1`) porque el modelo se entrenó con esa versión exacta — no actualizar sin coordinar con Ciencia de Datos.
 
 ## Estrategia de ramas
 
-Modelo centralizado: cada área del proyecto trabaja en su propia rama `feature/<área>-<tarea>` (ej. `feature/backend-setup`, `feature/dataset-limpieza`) directo sobre el repositorio oficial. Ningún cambio se sube a `main` sin pasar por Pull Request revisado.
+Modelo centralizado: cada área trabaja en su propia rama `feat/<área>` (ej. `feat/backend`, `feat/nlp`) directo sobre el repositorio oficial. Ningún cambio se sube a `main` sin PR revisado. Ramas se autoborran del remoto al mergear.
 
-## Pendiente de integración
+## Pendiente
 
-Cuando Persona 5 entregue el modelo serializado (`.joblib`) y el pipeline de NLP:
-1. Reemplazar el contenido de `app/ml/loader.py` (`cargar_modelo()`) por la carga real con `joblib.load(...)`.
-2. Reemplazar la lógica mock en `app/services/clasificador.py` por la llamada real al modelo.
-3. No debería ser necesario tocar `routers/` ni `schemas/` — ese es justamente el punto de tener la lógica separada por capas.
+- `GET /modelo/info`, `POST /contenido/lote`
+- Login/JWT (`/registro`, `/login`, `/logout`) — diseño cerrado (Bearer token, bcrypt, revocación en `refresh_tokens`), no bloqueante para esta entrega
