@@ -2,3 +2,5 @@ venv/
 __pycache__/
 *.pyc
 .env
+app/ml/modelo_techmind_v2_backup.joblib
+app/ml/modelo_techmind_v2.joblib
