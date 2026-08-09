@@ -4,6 +4,9 @@ from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.routers import health, contenido, categorias
 from app.ml.loader import cargar_modelo
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 

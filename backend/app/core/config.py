@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     db_name: str = "techmind"
 
     modelo_url: str | None = None
+    deepseek_api_key: str | None = None
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
