@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     description: str = "API que clasifica contenido técnico usando NLP y ML."
 
     db_user: str = "root"
-    db_password: str
+    db_password: str | None = None
     db_host: str = "localhost"
     db_port: int = 3306
     db_name: str = "techmind"
