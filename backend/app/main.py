@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from app.routers import health, contenido, categorias, chat
 from app.core.config import settings
-from app.routers import health, contenido, categorias
 from app.ml.loader import cargar_modelo
 import logging
 
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(contenido.router)
 app.include_router(categorias.router)
+app.include_router(chat.router)
 
 @app.on_event("startup")
 def iniciar_modelo():
