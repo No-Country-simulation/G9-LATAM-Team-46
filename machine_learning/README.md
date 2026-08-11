@@ -1,29 +1,17 @@
-# TechMind - Machine Learning
-
-Sistema de Procesamiento de Lenguaje Natural (PLN) y Machine Learning diseñado para clasificar automáticamente artículos y preguntas técnicas en sus respectivas áreas de especialización (*Backend, Bases de Datos, Ciencia de Datos, DevOps / Cloud, Frontend, Mobile, Programación General y Seguridad*).
-
----
-
-##  Características del Proyecto
-- **Limpieza avanzada de texto:** Expresiones regulares personalizadas para normalización y conservación de términos técnicos cortos (`go`, `js`, `ai`, `ml`, etc.).
-- **Ingeniería de Características:** Extracción de n-gramas (unigramas y bigramas) y ponderación mediante **TF-IDF**.
-- **Procesamiento explícito (Sin Pipeline):** Aplicación manual y controlada de **TF-IDF** separando los conjuntos de entrenamiento y prueba para evitar fugas de datos (*data leakage*).
-- **Modelado comparativo:** Implementación y evaluación de **Regresión Logística** (con manejo de clases desbalanceadas mediante `class_weight='balanced'`) y **Naive Bayes**.
-- **Optimización automática:** Búsqueda de hiperparámetros mediante **GridSearchCV** y validación cruzada.
-- **Evaluación exhaustiva:** Cálculo de métricas (*Accuracy, Precision, Recall, F1-Score*) y generación de **Matrices de Confusión**.
-
-
-
-##  Resultados y Rendimiento
-* **Exactitud Global (Accuracy):** ~75.35% en el modelo base de Regresión Logística.
-* **Estabilidad:** El modelo optimizado mediante `GridSearchCV` ofrece un rendimiento muy robusto y consistente.
-* **Clase mejor desempeñada:** *Mobile* (Precisión de 0.86), gracias a la fuerte diferenciación de su vocabulario técnico.
-
-
-
-##  Requisitos e Instalación
-
-Asegúrate de tener Python instalado junto con las siguientes librerías de Machine Learning y Ciencia de Datos:
-
-```bash
-pip install pandas numpy scikit-learn matplotlib
+# TechMind 
+## Descripción Este flujo de trabajo de Machine Learning está diseñado para la clasificación automatizada de información técnica dentro de entornos de desarrollo colaborativo y comunidades de aprendizaje. Para determinar la estrategia más eficiente para el proyecto TechMind, se implementó un análisis comparativo entre modelos de **Regresión Logística** y **Naive Bayes**, evaluando su capacidad de predicción mediante métricas de exactitud (accuracy) y precisión. El sistema se sustenta en un pipeline de procesamiento de lenguaje natural (NLP) que estandariza, limpia y analiza textos técnicos complejos, permitiendo asignar cada entrada a su categoría correspondiente con alta fiabilidad. ## Características Principales  **Pipeline de Procesamiento Automatizado:** Limpieza, normalización y análisis de textos técnicos complejos para garantizar la calidad de los datos.  **Ingeniería de Características:** Utiliza vectorización TF-IDF con stop words personalizadas en inglés y español.  **Modelos de Clasificación:** Análisis comparativo entre Regresión Logística y Naive Bayes, con optimización de hiperparámetros mediante GridSearchCV para asegurar la máxima eficiencia. 
+Escalabilidad: Diseñado para manejar flujos constantes de información en entornos profesionales. 
+## Metodología El flujo de trabajo se centra en un pipeline que procesa, limpia y analiza textos complejos, permitiendo asignar categorías de forma precisa: 
+1. Limpieza: Normalización de texto y eliminación de ruido (URLs, HTML, caracteres especiales) preservando términos técnicos críticos. 
+2. Vectorización: Transformación de texto a formato numérico mediante TF-IDF. 
+3. Entrenamiento: Evaluación comparativa entre Regresión Logística y Naive Bayes para determinar la mejor solución para el proyecto. 
+4. Optimización: Ajuste fino del modelo seleccionado utilizando GridSearchCV para obtener los mejores hiperparámetros. 
+## Tecnologías Utilizadas 
+Lenguaje: Python  
+Machine Learning: Scikit-Learn  
+NLP: Librerías de procesamiento de texto y vectores TF-IDF 
+Entorno: Visual Studio Code 
+## Instalación 
+1. Clonar el repositorio. 
+2. Instalar las dependencias necesarias: `pip install -r requirements.txt` 
+3. Ejecutar el pipeline de procesamiento de datos. 
