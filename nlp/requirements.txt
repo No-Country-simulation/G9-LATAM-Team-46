@@ -1,0 +1,20 @@
+# --- Modelo (Pipeline TF-IDF + clasificador en un solo objeto) ---
+# scikit-learn==1.6.1 confirmado como la version exacta usada para
+# entrenar modelo_techmind_v2.joblib (misma version que el modelo v1).
+scikit-learn==1.6.1
+joblib==1.4.2
+
+# numpy y scipy fijados a proposito: el .joblib es un pickle que lleva
+# arreglos de numpy serializados con numpy 2.x. Cargarlo con numpy 1.x
+# falla con "No module named 'numpy._core'". scipy va fijado porque
+# sklearn lo usa para las matrices dispersas del TF-IDF.
+numpy==2.5.1
+scipy==1.18.0
+
+# --- Pruebas ---
+pytest==8.2.0
+
+# NOTA: a partir de la migracion al modelo v2 ya NO se necesitan nltk ni
+# yake -- las palabras clave se extraen directo de los pesos TF-IDF del
+# propio vectorizador (ver src/keywords.py), lo que ademas resuelve el
+# problema de que WordNetLemmatizer (nltk) solo funciona en ingles.
