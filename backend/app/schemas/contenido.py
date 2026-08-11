@@ -13,8 +13,6 @@ class ContenidoEntrada(BaseModel):
             raise ValueError("El campo no puede contener solo espacios en blanco")
         return valor
 
-
-
 class ContenidoSalida(BaseModel):
     categoria: str
     probabilidad: float
