@@ -3,7 +3,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-
 class Settings(BaseSettings):
     app_name: str = "TechMind AI API"
     app_version: str = "0.1.0"
@@ -17,6 +16,10 @@ class Settings(BaseSettings):
 
     modelo_url: str | None = None
     deepseek_api_key: str | None = None
+
+    jwt_secret_key: str | None = None
+    jwt_algorithm: str = "HS256"
+    jwt_minutos_expiracion: int = 60
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
