@@ -1,0 +1,418 @@
+# 🧠 TechMind AI — Organización Inteligente del Conocimiento Técnico
+
+Solución de Ciencia de Datos que **recibe contenido técnico** (artículos, documentación, tutoriales, apuntes de estudio) y devuelve, en formato **JSON**, la información necesaria para organizarlo automáticamente: **categoría**, **nivel de confianza** y **palabras clave**.
+
+Pensado para plataformas educativas, comunidades técnicas y equipos que necesitan **clasificar, consultar y reutilizar** grandes volúmenes de conocimiento sin catalogarlo a mano.
+
+**Hackathon ONE — Alura Latam + Oracle · Equipo 46 (G9 LATAM)**
+
+---
+
+## Índice
+
+- [El problema y la solución](#el-problema-y-la-solución)
+- [Cómo funciona](#cómo-funciona)
+- [Categorías](#categorías)
+- [Cómo ejecutar el proyecto](#cómo-ejecutar-el-proyecto)
+- [Cómo usar la API](#cómo-usar-la-api)
+- [Ejemplos de uso](#ejemplos-de-uso)
+- [Integración con OCI](#integración-con-oci)
+- [Modelo de Machine Learning](#modelo-de-machine-learning)
+- [Dataset](#dataset)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Dependencias y versiones](#dependencias-y-versiones)
+- [Pruebas](#pruebas)
+- [Equipo](#equipo)
+
+---
+
+## El problema y la solución
+
+Estudiantes y profesionales de tecnología consumen a diario una gran cantidad de contenido técnico, y organizarlo, encontrarlo y reutilizarlo después consume mucho tiempo.
+
+TechMind actúa como un **bibliotecario automático**: recibe un contenido, lo lee, decide a qué categoría pertenece, extrae sus términos más relevantes y devuelve una ficha estructurada lista para ser consumida por cualquier aplicación.
+
+| Se le entrega | Devuelve |
+|---|---|
+| Un artículo, tutorial o apunte técnico | La **categoría** a la que pertenece |
+| | La **probabilidad** (qué tan seguro está el modelo) |
+| | Las **palabras clave** que lo caracterizan |
+
+Con esa ficha, una plataforma puede construir su base de conocimiento sola: navegar por temas, buscar por palabras clave y encontrar contenidos relacionados.
+
+---
+
+## Cómo funciona
+
+```
+   Contenido técnico              API REST (FastAPI)                    Respuesta JSON
+   ┌──────────────┐        ┌──────────────────────────┐        ┌────────────────────────┐
+   │ título       │───────▶│  validación (Pydantic)   │        │ categoria              │
+   │ texto        │        │  limpieza de texto       │───────▶│ probabilidad           │
+   └──────────────┘        │  Pipeline TF-IDF + LR    │        │ informacion_adicional  │
+                           └──────────────────────────┘        └────────────────────────┘
+                                        ▲
+                                        │  descarga automática si no está local
+                                 ┌──────────────┐
+                                 │ OCI Object   │
+                                 │   Storage    │
+                                 └──────────────┘
+```
+
+1. La API recibe `titulo` y `texto` y valida la entrada.
+2. Se aplica la **misma función de limpieza** que se usó al entrenar (coherencia entrenamiento/producción).
+3. El **Pipeline** (`TF-IDF` + `Regresión Logística`) predice la categoría y su probabilidad.
+4. Se extraen las palabras clave con mayor peso TF-IDF dentro del texto.
+5. Se devuelve todo en JSON.
+
+---
+
+## Categorías
+
+El modelo clasifica en **8 categorías**:
+
+| | | | |
+|---|---|---|---|
+| `Backend` | `Frontend` | `Mobile` | `Bases de Datos` |
+| `Ciencia de Datos` | `DevOps / Cloud` | `Seguridad` | `Programación General` |
+
+Se pueden consultar en vivo con `GET /categorias`.
+
+---
+
+## Cómo ejecutar el proyecto
+
+### Requisitos
+
+- **Python 3.11 o superior**
+- `pip` y `venv`
+
+### Instalación
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/No-Country-simulation/G9-LATAM-Team-46.git
+cd G9-LATAM-Team-46/backend
+
+# 2. Crear y activar el entorno virtual
+python -m venv venv
+venv\Scripts\activate          # Windows
+source venv/bin/activate       # macOS / Linux
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+
+# 4. Configurar variables de entorno
+copy .env.example .env         # Windows
+cp .env.example .env           # macOS / Linux
+```
+
+### Variables de entorno
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `MODELO_URL` | Solo si el modelo no está local | URL del modelo `.joblib` en OCI Object Storage |
+| `DEEPSEEK_API_KEY` | Solo para `/chat` | Clave del LLM usado en el endpoint conversacional |
+| `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` `DB_NAME` | No | Conexión MySQL. La API arranca sin ellas |
+
+> El modelo se descarga automáticamente desde OCI si no se encuentra en `backend/app/ml/`. La API arranca igual sin base de datos.
+
+### Levantar el servidor
+
+```bash
+uvicorn app.main:app --reload
+```
+
+- API: `http://127.0.0.1:8000`
+- **Documentación interactiva (Swagger): `http://127.0.0.1:8000/docs`**
+
+---
+
+## Cómo usar la API
+
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET` | `/health` | Estado del servicio |
+| `POST` | **`/contenido`** | **Clasifica un contenido técnico** (endpoint principal) |
+| `GET` | `/categorias` | Lista las categorías disponibles |
+| `POST` | `/chat` | Explicación en lenguaje natural del contenido clasificado |
+
+### `POST /contenido`
+
+**Entrada**
+
+| Campo | Tipo | Reglas |
+|---|---|---|
+| `titulo` | `string` | Obligatorio, no vacío ni solo espacios |
+| `texto` | `string` | Obligatorio, no vacío ni solo espacios |
+
+**Salida**
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `categoria` | `string` | Una de las 8 categorías |
+| `probabilidad` | `float` | Confianza del modelo, de 0 a 1 |
+| `informacion_adicional` | `string[]` | Palabras clave detectadas |
+
+**Errores**
+
+| Código | Cuándo |
+|---|---|
+| `422` | Falta un campo o está vacío |
+| `503` | El modelo todavía no está disponible |
+| `500` | Error interno |
+
+---
+
+## Ejemplos de uso
+
+### Ejemplo 1 — Backend
+
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Introducción a Spring Boot",
+    "texto": "En este contenido se presentan los conceptos básicos para la creación de APIs REST utilizando Java y Spring Boot, incluyendo controladores y servicios."
+  }'
+```
+
+```json
+{
+  "categoria": "Backend",
+  "probabilidad": 1.0,
+  "informacion_adicional": ["spring boot", "boot", "apis rest", "controladores"]
+}
+```
+
+### Ejemplo 2 — DevOps / Cloud
+
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Despliegue con Docker y Kubernetes",
+    "texto": "Cómo empaquetar aplicaciones en contenedores Docker y orquestarlas en un clúster de Kubernetes en la nube con pipelines de CI/CD."
+  }'
+```
+
+```json
+{
+  "categoria": "DevOps / Cloud",
+  "probabilidad": 0.99,
+  "informacion_adicional": ["contenedores docker", "empaquetar", "kubernetes", "despliegue"]
+}
+```
+
+### Ejemplo 3 — Seguridad
+
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Autenticación con JWT",
+    "texto": "Cómo proteger una API mediante tokens JWT, autenticación OAuth, cifrado y buenas prácticas de seguridad."
+  }'
+```
+
+```json
+{
+  "categoria": "Seguridad",
+  "probabilidad": 1.0,
+  "informacion_adicional": ["autenticación", "jwt", "api tokens", "buenas prácticas"]
+}
+```
+
+### Ejemplo 4 — Listar categorías
+
+```bash
+curl http://127.0.0.1:8000/categorias
+```
+
+```json
+{
+  "categorias": [
+    "Backend", "Bases de Datos", "Ciencia de Datos", "DevOps / Cloud",
+    "Frontend", "Mobile", "Programación General", "Seguridad"
+  ]
+}
+```
+
+### Ejemplo 5 — Entrada inválida
+
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{"titulo": "   ", "texto": "algo"}'
+```
+
+```json
+{
+  "detail": [
+    {
+      "type": "value_error",
+      "loc": ["body", "titulo"],
+      "msg": "Value error, El campo no puede contener solo espacios en blanco"
+    }
+  ]
+}
+```
+
+> Las respuestas de estos ejemplos son la salida real del modelo `modelo_techmind_v2.joblib`. Los valores de `probabilidad` y `informacion_adicional` pueden variar si se carga otra versión del modelo.
+
+---
+
+## Integración con OCI
+
+El proyecto usa **Oracle Cloud Infrastructure** como parte obligatoria de la solución:
+
+| Servicio | Uso |
+|---|---|
+| **OCI Object Storage** | Almacena el modelo entrenado (`.joblib`) y los documentos del corpus |
+
+El backend **descarga el modelo automáticamente desde OCI** al iniciar, si no lo encuentra localmente:
+
+```
+backend/app/ml/loader.py
+  └─ si no existe el .joblib local → descarga desde MODELO_URL (OCI) → lo cachea en memoria
+```
+
+Esto permite desplegar la API sin versionar el modelo en el repositorio y actualizarlo sin reconstruir la imagen.
+
+---
+
+## Modelo de Machine Learning
+
+| | |
+|---|---|
+| **Técnica** | TF-IDF + Regresión Logística |
+| **Formato** | `Pipeline` de scikit-learn (`tfidf` → `clf`) serializado con `joblib` |
+| **Artefacto** | `nlp/models/modelo_techmind_v2.joblib` |
+| **Vectorización** | TF-IDF con unigramas y bigramas |
+| **Clases** | 8 categorías |
+
+El artefacto es un **Pipeline completo**: recibe texto crudo y devuelve la predicción, de modo que el preprocesamiento viaja junto al modelo y no puede desincronizarse.
+
+**Notebooks del proceso de Ciencia de Datos:**
+
+| Notebook | Contenido |
+|---|---|
+| `machine_learning/techmind_ml.ipynb` | Entrenamiento, evaluación, métricas y serialización |
+| `dataset/notebooks/` | Extracción y EDA del corpus |
+| `entregas/` | Entregas por fase con sus reportes |
+
+---
+
+## Dataset
+
+Corpus técnico propio, construido por el equipo a partir de fuentes públicas.
+
+| | |
+|---|---|
+| **Registros** | 38.276 |
+| **Categorías** | 8, razonablemente balanceadas (ratio 2,6:1) |
+| **Archivo** | `dataset/processed/techmind_dataset_v2.csv` |
+| **Diccionario de datos** | `dataset/DICCIONARIO_DATOS_v5.md` |
+
+**Composición por fuente**
+
+| Fuente | Registros | % |
+|---|--:|--:|
+| StackOverflow | 25.574 | 66,8 % |
+| Medium | 11.140 | 29,1 % |
+| freeCodeCamp (ES) | 659 | 1,7 % |
+| Wikipedia (ES) | 379 | 1,0 % |
+| Corpus propio ES (PDF/OCR) | 524 | 1,4 % |
+
+**Columnas:** `titulo`, `texto`, `categoria`, `palabras_clave`, `fuente`, `idioma`
+
+> **Nota sobre el corpus:** predomina el contenido en inglés (95,9 %). La clasificación se apoya en el vocabulario técnico, que es común a ambos idiomas (`docker`, `python`, `api`, `jwt`), por lo que el modelo responde correctamente también en español. El corpus en español se incorporó específicamente para reforzar ese caso.
+
+---
+
+## Estructura del repositorio
+
+```
+G9-LATAM-Team-46/
+├── backend/                  # API REST (FastAPI)
+│   ├── app/
+│   │   ├── main.py           # Punto de entrada, routers y CORS
+│   │   ├── core/             # Configuración y conexión a base de datos
+│   │   ├── routers/          # /health · /contenido · /categorias · /chat
+│   │   ├── schemas/          # Contratos de entrada y salida (Pydantic)
+│   │   ├── services/         # Lógica de clasificación y chat
+│   │   └── ml/               # Carga del modelo y preprocesamiento
+│   ├── tests/
+│   └── requirements.txt
+├── dataset/                  # Corpus, notebooks de extracción y EDA
+│   ├── processed/            # Dataset final
+│   └── notebooks/
+├── machine_learning/         # Notebook de entrenamiento y reporte
+├── nlp/                      # Módulo NLP, modelo entrenado y pruebas
+│   ├── models/               # modelo_techmind_v2.joblib
+│   ├── src/
+│   └── tests/
+├── frontend/                 # Interfaz de demostración
+├── docs/                     # Documentación del equipo y del hackathon
+└── entregas/                 # Entregas por fase
+```
+
+---
+
+## Dependencias y versiones
+
+**Backend** (`backend/requirements.txt`)
+
+| Paquete | Versión |
+|---|---|
+| fastapi | 0.139.2 |
+| uvicorn | 0.51.0 |
+| pydantic | 2.13.4 |
+| pydantic-settings | 2.15.0 |
+| scikit-learn | 1.4.1.post1 |
+| numpy | 1.26.4 |
+| scipy | 1.17.1 |
+| joblib | 1.5.3 |
+| SQLAlchemy | 2.0.51 |
+| PyMySQL | 1.2.0 |
+| requests | 2.32.4 |
+| python-dotenv | 1.2.2 |
+| openai | 2.53.0 |
+
+> **Importante:** la versión de `scikit-learn` debe coincidir con la usada al entrenar el modelo. Cargar el `.joblib` con otra versión puede generar advertencias o resultados inconsistentes.
+
+Cada módulo tiene además su propio `requirements.txt`: `nlp/`, `machine_learning/` y `dataset/requirements-eda.txt`.
+
+---
+
+## Pruebas
+
+```bash
+# Backend
+cd backend
+pytest
+
+# Módulo NLP
+cd nlp
+pytest
+```
+
+| Ubicación | Cubre |
+|---|---|
+| `backend/tests/` | Endpoint `/contenido`, validaciones y respuestas |
+| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, esquemas |
+
+---
+
+## Equipo
+
+**Equipo 46 — G9 LATAM · Hackathon ONE (Alura Latam + Oracle)**
+
+| Área | Responsabilidad |
+|---|---|
+| Ciencia de Datos | Construcción del corpus, EDA, entrenamiento y evaluación del modelo |
+| Backend | API REST, integración del modelo, validaciones y manejo de errores |
+| DevOps / Cloud | Contenedores, despliegue e integración con OCI |
+| Frontend | Interfaz de demostración |
+
+La distribución detallada está en `docs/DISTRIBUCION DE ROLES - EQUIPO 46.pdf` y la convención de ramas en `docs/GUIA_RAMAS.md`.
