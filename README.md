@@ -1,356 +1,418 @@
+# 🧠 TechMind AI — Organización Inteligente del Conocimiento Técnico
 
-# G9-LATAM – TEAM 46
+Solución de Ciencia de Datos que **recibe contenido técnico** (artículos, documentación, tutoriales, apuntes de estudio) y devuelve, en formato **JSON**, la información necesaria para organizarlo automáticamente: **categoría**, **nivel de confianza** y **palabras clave**.
 
-# TechMind AI
-### Plataforma Inteligente para la Organización de Contenido Técnico
+Pensado para plataformas educativas, comunidades técnicas y equipos que necesitan **clasificar, consultar y reutilizar** grandes volúmenes de conocimiento sin catalogarlo a mano.
 
----
-
-# Descripción General
-
-**TechMind AI** es una solución desarrollada durante el **Hackathon ONE G9 – Alura + Oracle**, cuyo propósito es automatizar la organización de contenido técnico mediante técnicas de **Ciencia de Datos**, **Procesamiento de Lenguaje Natural (NLP)** y **Machine Learning**.
-
-La plataforma recibe información técnica, como artículos, documentación, tutoriales, apuntes de estudio y material de referencia, la analiza utilizando un modelo de clasificación entrenado por el equipo y devuelve información estructurada que facilita su consulta, reutilización y almacenamiento.
-
-La solución expone sus funcionalidades mediante una **API REST**, permitiendo que cualquier aplicación pueda consumir los resultados de forma sencilla y estandarizada. Además, se integra con **Oracle Cloud Infrastructure (OCI)** para el almacenamiento del modelo y el despliegue de la aplicación.
+**Hackathon ONE — Alura Latam + Oracle · Equipo 46 (G9 LATAM)**
 
 ---
 
-# Problema
+## Índice
 
-Actualmente, estudiantes, desarrolladores y profesionales de tecnología consumen diariamente grandes cantidades de documentación técnica proveniente de diferentes fuentes.
-
-Sin embargo, gran parte de esta información queda dispersa y sin una estructura adecuada, lo que genera diversos inconvenientes:
-
-- Dificultad para localizar información previamente consultada.
-- Clasificación manual de documentos.
-- Duplicidad de contenido.
-- Baja reutilización del conocimiento.
-- Pérdida de tiempo buscando información.
-
-Las plataformas educativas y los equipos técnicos necesitan herramientas que permitan organizar automáticamente esta información para mejorar la productividad y facilitar el aprendizaje continuo.
-
----
-
-# Nuestra Solución
-
-**TechMind AI** automatiza la organización de contenido técnico mediante un flujo inteligente basado en Machine Learning.
-
-Cuando un usuario envía un texto técnico, el sistema:
-
-- Analiza el contenido recibido.
-- Procesa el texto utilizando técnicas de NLP.
-- Clasifica automáticamente el documento dentro de una categoría.
-- Identifica las palabras clave más representativas.
-- Calcula el nivel de confianza de la clasificación.
-- Devuelve la información estructurada en formato JSON.
-
-De esta manera, se reduce significativamente el tiempo dedicado a catalogar documentos y se facilita la construcción de repositorios inteligentes de conocimiento.
+- [El problema y la solución](#el-problema-y-la-solución)
+- [Cómo funciona](#cómo-funciona)
+- [Categorías](#categorías)
+- [Cómo ejecutar el proyecto](#cómo-ejecutar-el-proyecto)
+- [Cómo usar la API](#cómo-usar-la-api)
+- [Ejemplos de uso](#ejemplos-de-uso)
+- [Integración con OCI](#integración-con-oci)
+- [Modelo de Machine Learning](#modelo-de-machine-learning)
+- [Dataset](#dataset)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Dependencias y versiones](#dependencias-y-versiones)
+- [Pruebas](#pruebas)
+- [Equipo](#equipo)
 
 ---
 
-# Objetivo General
+## El problema y la solución
 
-Desarrollar un MVP capaz de clasificar y enriquecer automáticamente contenido técnico mediante técnicas de Ciencia de Datos, exponiendo los resultados a través de una API REST integrada con Oracle Cloud Infrastructure (OCI).
+Estudiantes y profesionales de tecnología consumen a diario una gran cantidad de contenido técnico, y organizarlo, encontrarlo y reutilizarlo después consume mucho tiempo.
 
----
+TechMind actúa como un **bibliotecario automático**: recibe un contenido, lo lee, decide a qué categoría pertenece, extrae sus términos más relevantes y devuelve una ficha estructurada lista para ser consumida por cualquier aplicación.
 
-# Objetivos Específicos
+| Se le entrega | Devuelve |
+|---|---|
+| Un artículo, tutorial o apunte técnico | La **categoría** a la que pertenece |
+| | La **probabilidad** (qué tan seguro está el modelo) |
+| | Las **palabras clave** que lo caracterizan |
 
-- Construir una base de datos propia de contenido técnico.
-- Clasificar automáticamente documentos por categorías temáticas.
-- Extraer palabras clave relevantes de cada documento.
-- Implementar un modelo de Machine Learning para clasificación de texto.
-- Exponer el modelo mediante una API REST.
-- Validar entradas y gestionar errores de forma adecuada.
-- Integrar la solución con Oracle Cloud Infrastructure.
-- Documentar completamente el proyecto.
-- Entregar un MVP funcional que pueda evolucionar posteriormente.
+Con esa ficha, una plataforma puede construir su base de conocimiento sola: navegar por temas, buscar por palabras clave y encontrar contenidos relacionados.
 
 ---
 
-# Alcance del Proyecto
+## Cómo funciona
 
-El MVP contempla las siguientes funcionalidades:
+```
+   Contenido técnico              API REST (FastAPI)                    Respuesta JSON
+   ┌──────────────┐        ┌──────────────────────────┐        ┌────────────────────────┐
+   │ título       │───────▶│  validación (Pydantic)   │        │ categoria              │
+   │ texto        │        │  limpieza de texto       │───────▶│ probabilidad           │
+   └──────────────┘        │  Pipeline TF-IDF + LR    │        │ informacion_adicional  │
+                           └──────────────────────────┘        └────────────────────────┘
+                                        ▲
+                                        │  descarga automática si no está local
+                                 ┌──────────────┐
+                                 │ OCI Object   │
+                                 │   Storage    │
+                                 └──────────────┘
+```
 
-## Incluye
-
-- Clasificación automática de contenido técnico.
-- Extracción automática de palabras clave.
-- Cálculo de la probabilidad de clasificación.
-- API REST para consulta del modelo.
-- Integración con Oracle Cloud Infrastructure.
-- Documentación del proyecto.
-- Casos de prueba.
-- Despliegue funcional.
-
-## No Incluye (Versión MVP)
-
-- Autenticación de usuarios.
-- Base de datos relacional.
-- Historial de consultas.
-- Panel administrativo.
-- Recomendaciones inteligentes.
-- Búsqueda semántica avanzada.
-- Procesamiento masivo de archivos.
-
-Estas funcionalidades quedan planteadas como mejoras para futuras versiones.
+1. La API recibe `titulo` y `texto` y valida la entrada.
+2. Se aplica la **misma función de limpieza** que se usó al entrenar (coherencia entrenamiento/producción).
+3. El **Pipeline** (`TF-IDF` + `Regresión Logística`) predice la categoría y su probabilidad.
+4. Se extraen las palabras clave con mayor peso TF-IDF dentro del texto.
+5. Se devuelve todo en JSON.
 
 ---
 
-# Público Objetivo
+## Categorías
 
-La solución está dirigida a:
+El modelo clasifica en **8 categorías**:
 
-- Estudiantes de tecnología.
-- Plataformas educativas.
-- Equipos de desarrollo.
-- Empresas de software.
-- Empresas de manufactura.
-- Comunidades técnicas.
-- Profesionales del área TI.
+| | | | |
+|---|---|---|---|
+| `Backend` | `Frontend` | `Mobile` | `Bases de Datos` |
+| `Ciencia de Datos` | `DevOps / Cloud` | `Seguridad` | `Programación General` |
 
----
-
-# Arquitectura General
-
-La solución está compuesta por cuatro módulos principales.
-
-## Ciencia de Datos
-
-Responsable de construir el dataset, preparar la información, entrenar el modelo y generar el archivo serializado que será utilizado por la API.
-
-## API REST
-
-Recibe el contenido enviado por el usuario, carga el modelo entrenado y devuelve la clasificación correspondiente junto con información adicional.
-
-## Oracle Cloud Infrastructure
-
-Se utiliza para almacenar el modelo entrenado y desplegar la aplicación, garantizando disponibilidad, escalabilidad y acceso desde la nube.
-
-## Frontend
-
-Interfaz sencilla para demostrar el funcionamiento del sistema, permitiendo ingresar contenido técnico y visualizar los resultados obtenidos por el modelo.
+Se pueden consultar en vivo con `GET /categorias`.
 
 ---
 
-# Tecnologías Utilizadas
+## Cómo ejecutar el proyecto
 
-## Ciencia de Datos
+### Requisitos
 
-- Python
-- Pandas
-- NumPy
-- Scikit-Learn
-- TF-IDF
-- Regresión Logística
-- Joblib
+- **Python 3.11 o superior**
+- `pip` y `venv`
 
-## Backend
+### Instalación
 
-- FastAPI
-- Pydantic
-- Uvicorn
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/No-Country-simulation/G9-LATAM-Team-46.git
+cd G9-LATAM-Team-46/backend
 
-## Cloud
+# 2. Crear y activar el entorno virtual
+python -m venv venv
+venv\Scripts\activate          # Windows
+source venv/bin/activate       # macOS / Linux
 
-- Oracle Cloud Infrastructure (OCI)
-- OCI Object Storage
-- OCI Compute
+# 3. Instalar dependencias
+pip install -r requirements.txt
 
-## Herramientas de Desarrollo
+# 4. Configurar variables de entorno
+copy .env.example .env         # Windows
+cp .env.example .env           # macOS / Linux
+```
 
-- Git
-- GitHub
-- Google Colab
-- Docker
-- Trello
+### Variables de entorno
 
----
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `MODELO_URL` | Solo si el modelo no está local | URL del modelo `.joblib` en OCI Object Storage |
+| `DEEPSEEK_API_KEY` | Solo para `/chat` | Clave del LLM usado en el endpoint conversacional |
+| `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` `DB_NAME` | No | Conexión MySQL. La API arranca sin ellas |
 
-# Metodología de Desarrollo
+> El modelo se descarga automáticamente desde OCI si no se encuentra en `backend/app/ml/`. La API arranca igual sin base de datos.
 
-El proyecto se desarrolló utilizando una metodología colaborativa basada en iteraciones cortas.
+### Levantar el servidor
 
-Cada integrante fue responsable de un módulo específico mientras el líder coordinó la integración continua del proyecto.
+```bash
+uvicorn app.main:app --reload
+```
 
-El desarrollo se dividió en ocho etapas.
-
----
-
-# Etapa 1 – Definición del Alcance
-
-Durante esta etapa se analizó el reto planteado por el Hackathon.
-
-Se definieron:
-
-- Objetivos del proyecto.
-- Alcance del MVP.
-- Arquitectura general.
-- Módulos del sistema.
-- Flujo de funcionamiento.
-- Contrato de entrada y salida de la API.
+- API: `http://127.0.0.1:8000`
+- **Documentación interactiva (Swagger): `http://127.0.0.1:8000/docs`**
 
 ---
 
-# Etapa 2 – Construcción del Dataset
+## Cómo usar la API
 
-El equipo recopiló contenido técnico proveniente de:
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET` | `/health` | Estado del servicio |
+| `POST` | **`/contenido`** | **Clasifica un contenido técnico** (endpoint principal) |
+| `GET` | `/categorias` | Lista las categorías disponibles |
+| `POST` | `/chat` | Explicación en lenguaje natural del contenido clasificado |
 
-- Documentación oficial.
-- Tutoriales.
-- Artículos especializados.
-- Material de estudio.
-- Contenido elaborado por el propio equipo.
+### `POST /contenido`
 
-Posteriormente toda la información fue revisada, normalizada y clasificada manualmente por categorías.
+**Entrada**
 
----
+| Campo | Tipo | Reglas |
+|---|---|---|
+| `titulo` | `string` | Obligatorio, no vacío ni solo espacios |
+| `texto` | `string` | Obligatorio, no vacío ni solo espacios |
 
-# Etapa 3 – Exploración y Preparación de Datos
+**Salida**
 
-Se realizó un análisis exploratorio del dataset.
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `categoria` | `string` | Una de las 8 categorías |
+| `probabilidad` | `float` | Confianza del modelo, de 0 a 1 |
+| `informacion_adicional` | `string[]` | Palabras clave detectadas |
 
-Las principales actividades fueron:
+**Errores**
 
-- Análisis de la distribución de categorías.
-- Identificación de datos duplicados.
-- Evaluación de la longitud de los documentos.
-- Limpieza del texto.
-- Eliminación de stopwords.
-- Tokenización.
-- Normalización del contenido.
-- Preparación del dataset para entrenamiento.
-
----
-
-# Etapa 4 – Entrenamiento del Modelo
-
-Se desarrolló un modelo de clasificación de texto utilizando técnicas de Machine Learning.
-
-Durante esta etapa se realizó:
-
-- Vectorización del contenido.
-- Entrenamiento del modelo.
-- Evaluación del rendimiento.
-- Comparación de resultados.
-- Selección del mejor modelo.
-- Serialización para producción.
+| Código | Cuándo |
+|---|---|
+| `422` | Falta un campo o está vacío |
+| `503` | El modelo todavía no está disponible |
+| `500` | Error interno |
 
 ---
 
-# Etapa 5 – Desarrollo del Backend
+## Ejemplos de uso
 
-Se implementó una API REST responsable de:
+### Ejemplo 1 — Backend
 
-- Recibir contenido técnico.
-- Ejecutar el modelo entrenado.
-- Obtener la categoría correspondiente.
-- Generar la probabilidad de clasificación.
-- Extraer palabras clave.
-- Retornar una respuesta estructurada en formato JSON.
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Introducción a Spring Boot",
+    "texto": "En este contenido se presentan los conceptos básicos para la creación de APIs REST utilizando Java y Spring Boot, incluyendo controladores y servicios."
+  }'
+```
 
-La API incorpora validación de datos y manejo de errores.
+```json
+{
+  "categoria": "Backend",
+  "probabilidad": 1.0,
+  "informacion_adicional": ["spring boot", "boot", "apis rest", "controladores"]
+}
+```
 
----
+### Ejemplo 2 — DevOps / Cloud
 
-# Etapa 6 – Integración con Oracle Cloud
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Despliegue con Docker y Kubernetes",
+    "texto": "Cómo empaquetar aplicaciones en contenedores Docker y orquestarlas en un clúster de Kubernetes en la nube con pipelines de CI/CD."
+  }'
+```
 
-Una vez finalizado el modelo y la API, ambos componentes fueron integrados con Oracle Cloud Infrastructure.
+```json
+{
+  "categoria": "DevOps / Cloud",
+  "probabilidad": 0.99,
+  "informacion_adicional": ["contenedores docker", "empaquetar", "kubernetes", "despliegue"]
+}
+```
 
-La solución utiliza:
+### Ejemplo 3 — Seguridad
 
-- OCI Object Storage para almacenar el modelo.
-- OCI Compute para ejecutar la aplicación.
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{
+    "titulo": "Autenticación con JWT",
+    "texto": "Cómo proteger una API mediante tokens JWT, autenticación OAuth, cifrado y buenas prácticas de seguridad."
+  }'
+```
 
----
+```json
+{
+  "categoria": "Seguridad",
+  "probabilidad": 1.0,
+  "informacion_adicional": ["autenticación", "jwt", "api tokens", "buenas prácticas"]
+}
+```
 
-# Etapa 7 – Validación del Proyecto
+### Ejemplo 4 — Listar categorías
 
-Se realizaron múltiples pruebas utilizando contenido técnico perteneciente a distintas categorías.
+```bash
+curl http://127.0.0.1:8000/categorias
+```
 
-Se verificó:
+```json
+{
+  "categorias": [
+    "Backend", "Bases de Datos", "Ciencia de Datos", "DevOps / Cloud",
+    "Frontend", "Mobile", "Programación General", "Seguridad"
+  ]
+}
+```
 
-- Correcta clasificación.
-- Tiempo de respuesta.
-- Consistencia de las respuestas.
-- Manejo adecuado de errores.
-- Correcto funcionamiento del despliegue.
+### Ejemplo 5 — Entrada inválida
 
----
+```bash
+curl -X POST http://127.0.0.1:8000/contenido \
+  -H "Content-Type: application/json" \
+  -d '{"titulo": "   ", "texto": "algo"}'
+```
 
-# Etapa 8 – Documentación
+```json
+{
+  "detail": [
+    {
+      "type": "value_error",
+      "loc": ["body", "titulo"],
+      "msg": "Value error, El campo no puede contener solo espacios en blanco"
+    }
+  ]
+}
+```
 
-Se elaboró la documentación técnica y funcional del proyecto.
-
-Esta documentación incluye:
-
-- Descripción de la solución.
-- Arquitectura.
-- Tecnologías utilizadas.
-- Flujo de funcionamiento.
-- Organización del equipo.
-- Instrucciones de instalación.
-- Ejemplos de uso.
-- Casos de prueba.
-
----
-
-# Beneficios de la Solución
-
-La implementación de **TechMind AI** permite:
-
-- Automatizar la clasificación de documentos.
-- Reducir el tiempo de búsqueda de información.
-- Mejorar la organización del conocimiento.
-- Facilitar el aprendizaje continuo.
-- Incrementar la productividad de equipos técnicos.
-- Centralizar contenido técnico de forma estructurada.
-- Facilitar la integración con otras aplicaciones mediante una API REST.
-
----
-
-# Resultados Esperados
-
-Con este MVP se espera demostrar que es posible utilizar técnicas de Ciencia de Datos para organizar automáticamente grandes volúmenes de contenido técnico de forma rápida, eficiente y escalable.
-
-La solución constituye una base sólida para evolucionar hacia una plataforma inteligente de gestión del conocimiento incorporando funcionalidades como:
-
-- Búsqueda semántica.
-- Recomendación automática de contenidos.
-- Clustering de documentos.
-- Dashboard de administración.
-- Procesamiento masivo de documentos.
-- Persistencia de resultados.
-
----
-
-# Equipo de Desarrollo
-
-| Integrante 
-
-
-| Lucio Fernández Chávez | Líder del Proyecto y Coordinador de Ciencia de Datos 
-
-| David Fletes Esparza |  
-
-| Sebastián Lugo |  
-
-| Edson Alberto Herrera Cervantes |
-
-| Willman Alca Alfaro |
-
-| Daniel Soto | 
-
-| Hipólito Pérez Martínez | 
-
-| Edmer Rubio | 
+> Las respuestas de estos ejemplos son la salida real del modelo `modelo_techmind_v2.joblib`. Los valores de `probabilidad` y `informacion_adicional` pueden variar si se carga otra versión del modelo.
 
 ---
 
-# Conclusión
+## Integración con OCI
 
-**TechMind AI** representa una solución práctica para la organización inteligente de contenido técnico mediante la integración de Ciencia de Datos, Machine Learning, APIs REST y Oracle Cloud Infrastructure.
+El proyecto usa **Oracle Cloud Infrastructure** como parte obligatoria de la solución:
 
-El proyecto demuestra cómo la automatización puede transformar información dispersa en conocimiento estructurado, reutilizable y fácilmente accesible, constituyendo una base tecnológica escalable para futuras mejoras y nuevos casos de uso tanto en entornos educativos como empresariales.
+| Servicio | Uso |
+|---|---|
+| **OCI Object Storage** | Almacena el modelo entrenado (`.joblib`) y los documentos del corpus |
 
+El backend **descarga el modelo automáticamente desde OCI** al iniciar, si no lo encuentra localmente:
+
+```
+backend/app/ml/loader.py
+  └─ si no existe el .joblib local → descarga desde MODELO_URL (OCI) → lo cachea en memoria
+```
+
+Esto permite desplegar la API sin versionar el modelo en el repositorio y actualizarlo sin reconstruir la imagen.
+
+---
+
+## Modelo de Machine Learning
+
+| | |
+|---|---|
+| **Técnica** | TF-IDF + Regresión Logística |
+| **Formato** | `Pipeline` de scikit-learn (`tfidf` → `clf`) serializado con `joblib` |
+| **Artefacto** | `nlp/models/modelo_techmind_v2.joblib` |
+| **Vectorización** | TF-IDF con unigramas y bigramas |
+| **Clases** | 8 categorías |
+
+El artefacto es un **Pipeline completo**: recibe texto crudo y devuelve la predicción, de modo que el preprocesamiento viaja junto al modelo y no puede desincronizarse.
+
+**Notebooks del proceso de Ciencia de Datos:**
+
+| Notebook | Contenido |
+|---|---|
+| `machine_learning/techmind_ml.ipynb` | Entrenamiento, evaluación, métricas y serialización |
+| `dataset/notebooks/` | Extracción y EDA del corpus |
+| `entregas/` | Entregas por fase con sus reportes |
+
+---
+
+## Dataset
+
+Corpus técnico propio, construido por el equipo a partir de fuentes públicas.
+
+| | |
+|---|---|
+| **Registros** | 38.276 |
+| **Categorías** | 8, razonablemente balanceadas (ratio 2,6:1) |
+| **Archivo** | `dataset/processed/techmind_dataset_v2.csv` |
+| **Diccionario de datos** | `dataset/DICCIONARIO_DATOS_v5.md` |
+
+**Composición por fuente**
+
+| Fuente | Registros | % |
+|---|--:|--:|
+| StackOverflow | 25.574 | 66,8 % |
+| Medium | 11.140 | 29,1 % |
+| freeCodeCamp (ES) | 659 | 1,7 % |
+| Wikipedia (ES) | 379 | 1,0 % |
+| Corpus propio ES (PDF/OCR) | 524 | 1,4 % |
+
+**Columnas:** `titulo`, `texto`, `categoria`, `palabras_clave`, `fuente`, `idioma`
+
+> **Nota sobre el corpus:** predomina el contenido en inglés (95,9 %). La clasificación se apoya en el vocabulario técnico, que es común a ambos idiomas (`docker`, `python`, `api`, `jwt`), por lo que el modelo responde correctamente también en español. El corpus en español se incorporó específicamente para reforzar ese caso.
+
+---
+
+## Estructura del repositorio
+
+```
+G9-LATAM-Team-46/
+├── backend/                  # API REST (FastAPI)
+│   ├── app/
+│   │   ├── main.py           # Punto de entrada, routers y CORS
+│   │   ├── core/             # Configuración y conexión a base de datos
+│   │   ├── routers/          # /health · /contenido · /categorias · /chat
+│   │   ├── schemas/          # Contratos de entrada y salida (Pydantic)
+│   │   ├── services/         # Lógica de clasificación y chat
+│   │   └── ml/               # Carga del modelo y preprocesamiento
+│   ├── tests/
+│   └── requirements.txt
+├── dataset/                  # Corpus, notebooks de extracción y EDA
+│   ├── processed/            # Dataset final
+│   └── notebooks/
+├── machine_learning/         # Notebook de entrenamiento y reporte
+├── nlp/                      # Módulo NLP, modelo entrenado y pruebas
+│   ├── models/               # modelo_techmind_v2.joblib
+│   ├── src/
+│   └── tests/
+├── frontend/                 # Interfaz de demostración
+├── docs/                     # Documentación del equipo y del hackathon
+└── entregas/                 # Entregas por fase
+```
+
+---
+
+## Dependencias y versiones
+
+**Backend** (`backend/requirements.txt`)
+
+| Paquete | Versión |
+|---|---|
+| fastapi | 0.139.2 |
+| uvicorn | 0.51.0 |
+| pydantic | 2.13.4 |
+| pydantic-settings | 2.15.0 |
+| scikit-learn | 1.4.1.post1 |
+| numpy | 1.26.4 |
+| scipy | 1.17.1 |
+| joblib | 1.5.3 |
+| SQLAlchemy | 2.0.51 |
+| PyMySQL | 1.2.0 |
+| requests | 2.32.4 |
+| python-dotenv | 1.2.2 |
+| openai | 2.53.0 |
+
+> **Importante:** la versión de `scikit-learn` debe coincidir con la usada al entrenar el modelo. Cargar el `.joblib` con otra versión puede generar advertencias o resultados inconsistentes.
+
+Cada módulo tiene además su propio `requirements.txt`: `nlp/`, `machine_learning/` y `dataset/requirements-eda.txt`.
+
+---
+
+## Pruebas
+
+```bash
+# Backend
+cd backend
+pytest
+
+# Módulo NLP
+cd nlp
+pytest
+```
+
+| Ubicación | Cubre |
+|---|---|
+| `backend/tests/` | Endpoint `/contenido`, validaciones y respuestas |
+| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, esquemas |
+
+---
+
+## Equipo
+
+**Equipo 46 — G9 LATAM · Hackathon ONE (Alura Latam + Oracle)**
+
+| Área | Responsabilidad |
+|---|---|
+| Ciencia de Datos | Construcción del corpus, EDA, entrenamiento y evaluación del modelo |
+| Backend | API REST, integración del modelo, validaciones y manejo de errores |
+| DevOps / Cloud | Contenedores, despliegue e integración con OCI |
+| Frontend | Interfaz de demostración |
+
+La distribución detallada está en `docs/DISTRIBUCION DE ROLES - EQUIPO 46.pdf` y la convención de ramas en `docs/GUIA_RAMAS.md`.

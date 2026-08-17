@@ -1,12 +1,36 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from app.routers import health, contenido, categorias, chat, modelo, biblioteca
 from app.core.config import settings
-from app.routers import health, contenido
+from app.ml.loader import cargar_modelo
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+    ],
+    allow_origin_regex=r"https://techmind-frontend.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(health.router)
 app.include_router(contenido.router)
+app.include_router(categorias.router)
+app.include_router(chat.router)
+app.include_router(modelo.router)
+app.include_router(biblioteca.router)
+
+@app.on_event("startup")
+def iniciar_modelo():
+    cargar_modelo()
 
 
 @app.exception_handler(Exception)

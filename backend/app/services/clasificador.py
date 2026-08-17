@@ -1,8 +1,11 @@
 from fastapi import HTTPException, status
 from app.schemas.contenido import ContenidoEntrada, ContenidoSalida
 from app.ml.loader import cargar_modelo
+from app.ml.preprocesamiento import limpiar
 
 modelo = cargar_modelo()
+
+TOP_K_PALABRAS_CLAVE = 4
 
 
 def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
@@ -12,8 +15,19 @@ def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
             detail="El modelo de clasificación aún no está disponible. Intenta más tarde.",
         )
 
+    texto_limpio = limpiar(f"{entrada.titulo} {entrada.texto}")
+
+    proba = modelo.predict_proba([texto_limpio])[0]
+    idx = proba.argmax()
+
+    tfidf = modelo.named_steps["tfidf"]
+    vector = tfidf.transform([texto_limpio])
+    vocabulario = tfidf.get_feature_names_out()
+    top_idx = vector.toarray()[0].argsort()[::-1][:TOP_K_PALABRAS_CLAVE]
+    palabras_clave = [vocabulario[i] for i in top_idx if vector[0, i] > 0]
+
     return ContenidoSalida(
-        categoria="Backend",
-        probabilidad=0.87,
-        informacion_adicional=["Python", "FastAPI", "API REST"],
+        categoria=modelo.classes_[idx],
+        probabilidad=round(float(proba[idx]), 2),
+        informacion_adicional=palabras_clave,
     )
