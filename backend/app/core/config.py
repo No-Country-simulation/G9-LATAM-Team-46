@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     jwt_secret_key: str | None = None
     jwt_algorithm: str = "HS256"
     jwt_minutos_expiracion: int = 60
+    
+    dataset_url: str | None = None
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 

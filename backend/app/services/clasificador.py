@@ -1,7 +1,8 @@
 from fastapi import HTTPException, status
-from app.schemas.contenido import ContenidoEntrada, ContenidoSalida
+from app.schemas.contenido import ContenidoEntrada, ContenidoSalida, CategoriaRanking, ContenidoRelacionado
 from app.ml.loader import cargar_modelo
 from app.ml.preprocesamiento import limpiar
+from app.services.relacionados import obtener_relacionados
 
 modelo = cargar_modelo()
 
@@ -26,8 +27,23 @@ def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
     top_idx = vector.toarray()[0].argsort()[::-1][:TOP_K_PALABRAS_CLAVE]
     palabras_clave = [vocabulario[i] for i in top_idx if vector[0, i] > 0]
 
+    orden_ranking = proba.argsort()[::-1]
+    ranking_categorias = [
+        CategoriaRanking(
+            categoria=modelo.classes_[i],
+            probabilidad=round(float(proba[i]), 2),
+        )
+        for i in orden_ranking
+    ]
+
+    categoria_ganadora = modelo.classes_[idx]
+    relacionados_raw = obtener_relacionados(texto_limpio, categoria_ganadora)
+    contenidos_relacionados = [ContenidoRelacionado(**r) for r in relacionados_raw]
+
     return ContenidoSalida(
-        categoria=modelo.classes_[idx],
+        categoria=categoria_ganadora,
         probabilidad=round(float(proba[idx]), 2),
         informacion_adicional=palabras_clave,
+        ranking_categorias=ranking_categorias,
+        contenidos_relacionados=contenidos_relacionados,
     )

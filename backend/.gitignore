@@ -5,3 +5,4 @@ __pycache__/
 app/ml/modelo_techmind_v2_backup.joblib
 app/ml/modelo_techmind_v2.joblib
 .dockerignore
+app/ml/techmind_dataset_v2.csv

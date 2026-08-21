@@ -12,8 +12,20 @@ class ContenidoEntrada(BaseModel):
         if not valor.strip():
             raise ValueError("El campo no puede contener solo espacios en blanco")
         return valor
+    
+class CategoriaRanking(BaseModel):
+    categoria: str
+    probabilidad: float
+    
+class ContenidoRelacionado(BaseModel):
+    titulo: str
+    texto: str
+
 
 class ContenidoSalida(BaseModel):
     categoria: str
     probabilidad: float
     informacion_adicional: List[str]
+    ranking_categorias: List[CategoriaRanking]
+    contenidos_relacionados: List[ContenidoRelacionado]
+    
