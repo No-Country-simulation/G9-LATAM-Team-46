@@ -21,8 +21,9 @@ clasificador de contenido técnico (Hackathon ONE G9 - Alura/Oracle).
 
 Rol: Ingeniero NLP y Preparación para Producción.
 
-**Versión actual: v2** — migrado al modelo entrenado con dataset
-bilingüe (inglés + español). Ver "Historial de versiones" al final.
+Entrenado con el dataset bilingüe (inglés + español) del proyecto.
+Además del clasificador, expone el motor de contenido relacionado y los
+términos de los botones de sugerencia.
 
 ## Arquitectura
 
@@ -42,13 +43,17 @@ techmind-nlp-pipeline/
 │   ├── model_repository.py  # Carga y caché del Pipeline serializado
 │   ├── schemas.py           # Contrato de datos tipado (ResultadoClasificacion)
 │   ├── classifier.py        # Orquesta: limpieza -> predicción -> palabras clave
+│   ├── recommender.py       # Contenido relacionado por similitud del coseno
 │   └── inference.py         # Fachada para la API: procesar_contenido() + precargar_modelo()
 ├── scripts/
 │   ├── validar_modelo.py         # Valida carga del modelo y predicciones de prueba
 │   └── simular_entrega_json.py   # Corre el pipeline completo y muestra el JSON final
 ├── models/
-│   ├── README.md                     # Detalle del modelo v2
-│   └── modelo_techmind_v2.joblib     # Modelo real (agrégalo tú aquí, no viaja en este zip)
+│   ├── README.md                      # Detalle de los artefactos
+│   ├── modelo_techmind_v2.joblib      # El clasificador
+│   ├── matriz_historica.pkl           # Corpus vectorizado, para contenido relacionado
+│   ├── sugerencias_botones.json       # Términos de los botones
+│   └── diccionario_categorias.json    # Las 8 categorías y sus términos
 ├── tests/
 │   ├── __init__.py
 │   ├── test_cleaning.py
@@ -59,11 +64,15 @@ techmind-nlp-pipeline/
 │   └── test_inference.py     # Fachada que consume la API
 ├── pytest.ini
 ├── requirements.txt
+├── NOTAS_PARA_MODELADO.md   # Requisitos para reentrenar el modelo
+├── README_BACKEND.md        # Lo que queda del lado de la API
 └── README.md
 ```
 
-**Nota:** el `.joblib` (~6.7 MB) **sí se versiona** en el repo, igual que
-se hacía con el v1: la API lo toma de `models/`. No requiere Git LFS.
+**Nota:** los artefactos **sí se versionan** en el repo y la API los toma
+de `models/`. El `.joblib` pesa 5,9 MB y `matriz_historica.pkl` 47 MB,
+ambos por debajo del límite de 100 MB de GitHub, así que no hace falta
+Git LFS.
 
 ## Cómo levantar el entorno (local, VSCode)
 
@@ -79,8 +88,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-No hace falta descargar nada de NLTK — el modelo v2 ya no depende de
-esa librería (ver "Historial de versiones").
+No hace falta descargar nada de NLTK. Las palabras clave salen de los
+pesos TF-IDF del propio vectorizador, cuyo vocabulario ya es bilingüe
+porque así se entrenó.
 
 ## Cómo correr las pruebas
 
@@ -88,7 +98,7 @@ esa librería (ver "Historial de versiones").
 pytest
 ```
 
-**51 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
+**56 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
 `test_cleaning.py` y `test_schemas.py` usan datos sintéticos, y el
 resto entrena Pipelines pequeños en memoria (ver el uso de "dobles de
 prueba" en `test_classifier.py`). La suite corre rápido y sin depender
@@ -118,8 +128,8 @@ funcione en inglés y español. Salida esperada:
    OK, coinciden con las 8 categorías esperadas
 3) Probando inferencia con textos de ejemplo (EN + ES)...
    CORS error in Flask: 'How to fix CORS error in a Flask REST API'
-   -> Backend  (probabilidad: 0.791)
-      palabras clave: ['cors', 'flask', 'flask rest', 'rest api', 'fix']
+   -> Backend  (probabilidad: 0.819)
+      palabras clave: ['cors', 'flask', 'rest api', 'error', 'fix']
    ...
 Validación completa.
 ```
@@ -243,51 +253,83 @@ una versión nueva, debe cumplir:
 ## Modelo
 
 Ver `models/README.md` para el detalle completo (hiperparámetros,
-accuracy, por qué es un solo archivo). `scikit-learn==1.6.1` confirmado
+accuracy, por qué es un solo archivo). `scikit-learn==1.8.0` confirmado
 y fijado en `requirements.txt`.
 
-Resumen del v2 vigente: `TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True,
-min_df=3, max_features=60000)` + `LogisticRegression(C=4.0, max_iter=1000,
-class_weight='balanced')`. Accuracy 0.7761 sobre test estratificado de
-7.658 textos; F1 por categoría entre 0.65 (Backend) y 0.88 (Mobile).
+Resumen del modelo vigente: `TfidfVectorizer(ngram_range=(1,2), min_df=5,
+max_features=60000)` + `LogisticRegression(C=4.0, max_iter=1000,
+class_weight='balanced')`. Sobre un test estratificado de 7.652 textos:
+F1 macro 0.7549, accuracy 0.7530, y F1 por categoría entre 0.63 (Backend)
+y 0.85 (Mobile). Validación cruzada de 5 particiones: 0.7508 ± 0.0019.
 
 ## Estado actual
 
 - [x] Estructura del proyecto + `requirements.txt`
-- [x] Limpieza de texto (réplica exacta de la función del modelo v2)
+- [x] Limpieza de texto que replica la del entrenamiento: conserva
+      `+ # . _ - /` y los dígitos, para que `C++`, `C#`, `CI/CD` y
+      `HTML5` lleguen enteros al modelo
 - [x] Extracción de palabras clave (pesos TF-IDF, sin dependencia de NLTK)
+- [x] Filtro de n-gramas redundantes y de palabras funcionales
+- [x] Motor de contenido relacionado (`src/recommender.py`)
 - [x] Pipeline de inferencia completo, con manejo de errores tipado
 - [x] Modularización aplicando SOLID (ver "Arquitectura")
-- [x] Pruebas automatizadas para cada módulo (51/51 pasando)
-- [x] Ruta del modelo independiente del directorio de trabajo
+- [x] Pruebas automatizadas para cada módulo (56/56 pasando)
+- [x] Rutas independientes del directorio de trabajo y de la disposición
+      de carpetas, con `TECHMIND_MODELOS` por encima
 - [x] Precarga del modelo para el arranque de la API
-- [x] Filtro de n-gramas redundantes en las palabras clave
-- [x] Evaluada una alternativa (modelo v3) y descartada con datos —
-      ver "Decisión" en `NOTAS_PARA_MODELADO.md`
-- [x] Validado con el `.joblib` real del modelo v2 (`scripts/validar_modelo.py`):
+- [x] Validado con el `.joblib` real (`scripts/validar_modelo.py`):
       carga OK, 8/8 categorías, inferencia correcta en EN y ES
 
-## Historial de versiones
+## Contenido relacionado y botones de sugerencia
 
-**v1 → v2:** el equipo migró de un dataset solo en inglés a uno
-bilingüe (inglés + español) para soportar mejor el caso de uso con
-jurado/empresas de LATAM. Cambios que esto trajo a este pipeline:
+Además del clasificador, `models/` trae dos artefactos que alimentan
+funciones de la interfaz. Los dos salen del mismo vectorizador, así que
+hablan del mismo vocabulario que el modelo entiende.
 
-- La función de limpieza cambió (orden `título + texto`, sin excepción
-  para términos técnicos cortos).
-- El modelo pasó de dos archivos (`modelo` + `vectorizador`) a un solo
-  `Pipeline` serializado.
-- Las palabras clave dejaron de extraerse con NLTK (lematización) y
-  pasaron a extraerse de los pesos TF-IDF del propio vectorizador —
-  esto también resolvió que `WordNetLemmatizer` (NLTK) solo funciona
-  en inglés, lo cual no tenía sentido con contenido en español.
-- El contrato de salida se alineó al formato pedido por el hackatón
-  (`categoria` + `probabilidad` + `informacion_adicional`), agregando
-  `categoria_alternativa` cuando la confianza es baja (recomendación
-  del equipo de modelado).
+### `matriz_historica.pkl` — contenido relacionado
 
-Evidencia de que la migración resolvió el problema real: el mismo texto
-en español que con el modelo v1 daba 0.16 de confianza y no reconocía
-ninguna palabra, con el modelo v2 reconoce varias palabras reales y
-sube a 0.20-0.87 según el caso (ver `resumen_demos_pruebas.md` para el
-detalle completo de las pruebas).
+Los 38.257 documentos del corpus vectorizados, con sus IDs, títulos y
+categorías. `src/recommender.py` compara contra ellos el texto que llega
+y devuelve los más parecidos por similitud del coseno.
+
+```python
+from src.config import MATRIZ_HISTORICA_PATH
+from src.recommender import RecomendadorContenido
+
+recomendador = RecomendadorContenido(MATRIZ_HISTORICA_PATH)   # una sola vez
+recomendador.recomendar(f"{titulo} {texto}", top_n=3)
+```
+
+No se guarda la matriz completa de similitudes: con 38.257 documentos
+serían más de mil cuatrocientos millones de valores, casi todos cercanos
+a cero. Se guardan los vectores y se compara contra ellos únicamente el
+texto de la consulta, que es una operación por petición.
+
+Devuelve lista vacía cuando nada supera el umbral de 0.10. Es una
+respuesta legítima, no un error: no siempre hay contenido relacionado.
+
+### `sugerencias_botones.json` — botones de la pantalla principal
+
+Quince términos técnicos para que alguien que entra por primera vez
+pueda probar el sistema sin pensar qué escribir.
+
+```python
+import json
+from src.config import SUGERENCIAS_PATH
+
+with open(SUGERENCIAS_PATH, encoding="utf-8") as f:
+    terminos = json.load(f)["terminos"]
+```
+
+No están elegidos a mano: salen de medir la **distintividad** de cada
+término —cuánto pesa dentro de su categoría comparado con su peso en el
+corpus entero—, con un tope de dos por categoría para que los botones
+cubran temas variados. Por frecuencia no serviría: los primeros puestos
+se los llevan `the`, `to` y `and`.
+
+Se regeneran corriendo `machine_learning/sugerencias_y_relacionados.ipynb`.
+
+---
+
+Para la lista de lo que queda por hacer del lado de la API, ver
+[`README_BACKEND.md`](README_BACKEND.md).
