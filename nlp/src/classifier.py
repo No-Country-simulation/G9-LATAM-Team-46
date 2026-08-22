@@ -11,7 +11,7 @@ disco ni entrenar un modelo real en cada test.
 
 from typing import Callable, Optional
 
-from src.cleaning import limpiar_texto
+from src.cleaning import preparar_entrada_modelo
 from src.config import TOP_N_PALABRAS_CLAVE, UMBRAL_CATEGORIA_ALTERNATIVA
 from src.exceptions import EntradaInvalidaError, TextoVacioError
 from src.keywords import ExtractorPalabrasClave, ExtractorPalabrasClaveTfidf
@@ -35,7 +35,7 @@ class ClasificadorContenido:
         repositorio_modelo: RepositorioModelo,
         umbral_categoria_alternativa: float = UMBRAL_CATEGORIA_ALTERNATIVA,
         top_n_palabras_clave: int = TOP_N_PALABRAS_CLAVE,
-        limpiador: Callable[[str], str] = limpiar_texto,
+        limpiador: Callable[[str, str], str] = preparar_entrada_modelo,
     ) -> None:
         """
         Args:
@@ -87,10 +87,13 @@ class ClasificadorContenido:
         self._validar_entrada(titulo, texto)
 
         # Orden v2: título primero, texto después (ver notebook de modelado).
-        texto_crudo = f"{titulo} {texto}".strip()
-        texto_limpio = self._limpiador(texto_crudo)
+        # Cada campo se limpia por separado y luego se unen, igual que en
+        # el entrenamiento (titulo_limpio + ' ' + texto_limpio). Concatenar
+        # antes de limpiar no es equivalente: el título podría terminar en
+        # una URL o un símbolo que altere el límite entre ambos campos.
+        texto_limpio = self._limpiador(titulo, texto)
 
-        if not texto_limpio:
+        if not texto_limpio.strip():
             raise TextoVacioError(
                 "El texto no contiene contenido procesable después de la limpieza."
             )
@@ -104,8 +107,11 @@ class ClasificadorContenido:
         categoria = str(pipeline.classes_[indice_principal])
         probabilidad = float(probabilidades[indice_principal])
 
+        # La categoría se pasa al extractor para que pondere cada término
+        # por su aporte a esa clase: así las palabras clave explican la
+        # clasificación en vez de solo describir el texto.
         palabras_clave = self._obtener_extractor_palabras_clave(pipeline).extraer(
-            texto_limpio, self._top_n_palabras_clave
+            texto_limpio, self._top_n_palabras_clave, categoria
         )
 
         categoria_alternativa = None
@@ -125,7 +131,10 @@ class ClasificadorContenido:
         # cambia entre llamadas mientras el Pipeline sea el mismo).
         if self._extractor_palabras_clave is None:
             vectorizador = pipeline.named_steps["tfidf"]
-            self._extractor_palabras_clave = ExtractorPalabrasClaveTfidf(vectorizador)
+            clasificador = pipeline.named_steps.get("clf")
+            self._extractor_palabras_clave = ExtractorPalabrasClaveTfidf(
+                vectorizador, clasificador
+            )
         return self._extractor_palabras_clave
 
     @staticmethod

@@ -207,7 +207,7 @@ pip install -r nlp/requirements.txt
 cd nlp && pytest
 ```
 
-Esperado: **56 passed**.
+Esperado: **72 passed**.
 
 ```python
 from src.inference import procesar_contenido

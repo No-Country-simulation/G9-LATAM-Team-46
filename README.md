@@ -471,7 +471,7 @@ cd nlp && pytest
 | Ubicación | Cubre |
 |---|---|
 | `backend/tests/` | Endpoint `/contenido`, validaciones y respuestas |
-| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, repositorio del modelo y esquemas — **56 pruebas** |
+| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, repositorio del modelo y esquemas, tokenización — **72 pruebas** |
 
 ---
 

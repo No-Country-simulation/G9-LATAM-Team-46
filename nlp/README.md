@@ -43,10 +43,12 @@ techmind-nlp-pipeline/
 │   ├── model_repository.py  # Carga y caché del Pipeline serializado
 │   ├── schemas.py           # Contrato de datos tipado (ResultadoClasificacion)
 │   ├── classifier.py        # Orquesta: limpieza -> predicción -> palabras clave
+│   ├── tokenization.py      # Tokenización y stopwords, para análisis
 │   ├── recommender.py       # Contenido relacionado por similitud del coseno
 │   └── inference.py         # Fachada para la API: procesar_contenido() + precargar_modelo()
 ├── scripts/
 │   ├── validar_modelo.py         # Valida carga del modelo y predicciones de prueba
+│   ├── inspeccionar_modelo.py    # Muestra los hiperparámetros del Pipeline
 │   └── simular_entrega_json.py   # Corre el pipeline completo y muestra el JSON final
 ├── models/
 │   ├── README.md                      # Detalle de los artefactos
@@ -60,6 +62,7 @@ techmind-nlp-pipeline/
 │   ├── test_keywords.py
 │   ├── test_model_repository.py
 │   ├── test_classifier.py
+│   ├── test_tokenization.py
 │   ├── test_schemas.py       # Contrato de salida
 │   └── test_inference.py     # Fachada que consume la API
 ├── pytest.ini
@@ -98,7 +101,7 @@ porque así se entrenó.
 pytest
 ```
 
-**56 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
+**72 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
 `test_cleaning.py` y `test_schemas.py` usan datos sintéticos, y el
 resto entrena Pipelines pequeños en memoria (ver el uso de "dobles de
 prueba" en `test_classifier.py`). La suite corre rápido y sin depender
@@ -273,7 +276,7 @@ y 0.85 (Mobile). Validación cruzada de 5 particiones: 0.7508 ± 0.0019.
 - [x] Motor de contenido relacionado (`src/recommender.py`)
 - [x] Pipeline de inferencia completo, con manejo de errores tipado
 - [x] Modularización aplicando SOLID (ver "Arquitectura")
-- [x] Pruebas automatizadas para cada módulo (56/56 pasando)
+- [x] Pruebas automatizadas para cada módulo (72/72 pasando)
 - [x] Rutas independientes del directorio de trabajo y de la disposición
       de carpetas, con `TECHMIND_MODELOS` por encima
 - [x] Precarga del modelo para el arranque de la API

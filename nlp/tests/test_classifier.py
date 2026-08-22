@@ -106,12 +106,16 @@ def test_clasificar_lanza_error_si_ambos_campos_vacios(clasificador):
         clasificador.clasificar(titulo="", texto="")
 
 
-def test_clasificar_lanza_error_si_texto_limpio_queda_vacio(clasificador):
-    # Signos de puntuación puros: no sobreviven a la limpieza. Se evitan
-    # aquí los dígitos y los caracteres técnicos (+ # . _ - /), que la
-    # limpieza conserva a propósito por su valor discriminante.
+def test_clasificar_lanza_error_si_texto_limpio_queda_vacio(pipeline_de_prueba):
+    # El limpiador se inyecta a propósito: lo que se verifica aquí es la
+    # reacción del clasificador cuando la limpieza no deja nada, no las
+    # reglas concretas de limpiar_texto (eso lo cubre test_cleaning.py).
+    clasificador = ClasificadorContenido(
+        repositorio_modelo=_RepositorioModeloFalso(pipeline_de_prueba),
+        limpiador=lambda titulo, texto: "",
+    )
     with pytest.raises(TextoVacioError):
-        clasificador.clasificar(titulo="¿¿¿ !!!", texto="((( *** )))")
+        clasificador.clasificar(titulo="algo", texto="algo")
 
 
 def test_clasificar_lanza_error_con_tipos_invalidos(clasificador):
