@@ -1,0 +1,15 @@
+# Archivos que generan los notebooks al ejecutarse. Los artefactos que
+# consume la API viven versionados en nlp/models/: estos son la copia que
+# queda en la carpeta de trabajo al correr el entrenamiento.
+modelo_techmind_v2.joblib
+matriz_historica.pkl
+sugerencias_botones.json
+resultados_entrenamiento.joblib
+metricas_rendimiento.csv
+informe_entrenamiento.md
+
+# Graficos exportados
+*.png
+
+# Jupyter
+.ipynb_checkpoints/

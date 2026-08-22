@@ -107,8 +107,11 @@ def test_clasificar_lanza_error_si_ambos_campos_vacios(clasificador):
 
 
 def test_clasificar_lanza_error_si_texto_limpio_queda_vacio(clasificador):
+    # Signos de puntuación puros: no sobreviven a la limpieza. Se evitan
+    # aquí los dígitos y los caracteres técnicos (+ # . _ - /), que la
+    # limpieza conserva a propósito por su valor discriminante.
     with pytest.raises(TextoVacioError):
-        clasificador.clasificar(titulo="123", texto="!!! ###")
+        clasificador.clasificar(titulo="¿¿¿ !!!", texto="((( *** )))")
 
 
 def test_clasificar_lanza_error_con_tipos_invalidos(clasificador):

@@ -17,7 +17,7 @@ Pensada para plataformas educativas, comunidades técnicas y equipos que necesit
 
 En Swagger podés clasificar un texto sin instalar nada: abrí `POST /contenido`, tocá *Try it out* y pegá cualquier contenido técnico.
 
-**Resultado del modelo:** 75 % de acierto sobre 8 categorías (F1 macro **0.7527**), verificado con validación cruzada de 5 particiones (**0.7508 ± 0.0019**). Frente a una clasificación al azar, que acertaría 14 %, es **24 veces mejor**.
+**Resultado del modelo:** 75 % de acierto sobre 8 categorías (F1 macro **0.7549**), verificado con validación cruzada de 5 particiones (**0.7508 ± 0.0019**). Frente a una clasificación al azar, que acertaría 14 %, es **24 veces mejor**.
 
 ---
 
@@ -348,13 +348,33 @@ El artefacto es un **Pipeline completo**: recibe texto crudo y devuelve la predi
 
 | Métrica | Valor |
 |---|---|
-| **F1 macro (test)** | 0.7527 |
+| **F1 macro (test)** | 0.7549 |
 | **Validación cruzada 5-fold** | 0.7508 ± 0.0019 |
+| Accuracy (test) | 0.7530 |
 | Línea base (clase más frecuente) | 0.0309 |
+
+Sobre un conjunto de prueba de **7.652 textos** que conserva la distribución real y no se tocó en ningún momento. El F1 por categoría va de **0.63** (Backend) a **0.85** (Mobile).
 
 Se comparó contra un **baseline** y contra **Naive Bayes**, en versión base y ajustada. Se eligió por **F1 macro** —y no por accuracy— para no premiar a un modelo que acierte solo en las categorías grandes. La coincidencia entre el test y la validación cruzada confirma que el resultado es **estable y no producto del azar**.
 
-**Notebook del proceso:** [`machine_learning/techmind_ml.ipynb`](machine_learning/techmind_ml.ipynb)
+El entrenamiento usa `class_weight='balanced'` para compensar el desbalance entre categorías: Seguridad tiene 2.792 ejemplos frente a los 5.396 de Frontend.
+
+**Notebooks del proceso:** [`eda/eda_y_limpieza.ipynb`](eda/eda_y_limpieza.ipynb) · [`machine_learning/entrenamiento_modelo.ipynb`](machine_learning/entrenamiento_modelo.ipynb)
+
+### Contenido relacionado y botones de sugerencia
+
+Sobre el mismo vectorizador se construyeron dos funciones más, en [`machine_learning/sugerencias_y_relacionados.ipynb`](machine_learning/sugerencias_y_relacionados.ipynb):
+
+| Artefacto | Qué hace |
+|---|---|
+| `nlp/models/matriz_historica.pkl` | Los 38.257 documentos del corpus vectorizados. Dado un texto, devuelve los que hablan de lo mismo por similitud del coseno |
+| `nlp/models/sugerencias_botones.json` | 15 términos técnicos para los botones de la pantalla principal |
+
+No se almacena la matriz completa de similitudes: con 38.257 documentos serían más de mil cuatrocientos millones de valores, casi todos cercanos a cero. Se guardan los vectores y se compara contra ellos únicamente el texto de la consulta.
+
+Los términos de los botones salen de medir la **distintividad** de cada uno —cuánto pesa dentro de su categoría comparado con su peso en el corpus entero—, con un tope de dos por categoría. Por frecuencia no serviría: los primeros puestos se los llevan `the`, `to` y `and`.
+
+Un vecino recomendado cae en la misma categoría que la consulta entre el **31 %** y el **61 %** de las veces según la categoría, contra el 12,5 % que daría recomendar al azar.
 
 ---
 
@@ -402,11 +422,13 @@ G9-LATAM-Team-46/
 │   ├── dockerfile
 │   └── requirements.txt
 ├── dataset/                  # Corpus y su documentación
-├── machine_learning/         # Notebook de entrenamiento y reporte
-├── nlp/                      # Módulo NLP, modelo entrenado y pruebas
-│   ├── models/               # modelo_techmind_v2.joblib
-│   ├── src/
-│   └── tests/
+├── eda/                      # Exploración, limpieza y preparación
+├── machine_learning/         # Notebooks de entrenamiento y de sugerencias
+├── nlp/                      # Módulo NLP, artefactos entrenados y pruebas
+│   ├── models/               # modelo · matriz histórica · sugerencias
+│   ├── src/                  # clasificador · recomendador · limpieza
+│   ├── tests/
+│   └── README_BACKEND.md     # Lo que queda del lado de la API
 ├── frontend/                 # Interfaz web
 ├── devops/                   # Guía de despliegue en AWS
 └── docs/                     # Documentación del equipo
@@ -449,7 +471,7 @@ cd nlp && pytest
 | Ubicación | Cubre |
 |---|---|
 | `backend/tests/` | Endpoint `/contenido`, validaciones y respuestas |
-| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, repositorio del modelo y esquemas |
+| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, repositorio del modelo y esquemas — **56 pruebas** |
 
 ---
 

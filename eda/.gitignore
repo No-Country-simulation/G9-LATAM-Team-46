@@ -1,0 +1,12 @@
+# Archivos que genera el notebook al ejecutarse. Se regeneran corriendolo,
+# asi que no tiene sentido versionarlos: entre los tres CSV son ~175 MB.
+dataset_limpio.csv
+train_dataset.csv
+test_dataset.csv
+diccionario_categorias.json
+
+# Graficos exportados
+*.png
+
+# Jupyter
+.ipynb_checkpoints/
