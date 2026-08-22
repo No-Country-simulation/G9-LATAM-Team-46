@@ -106,9 +106,16 @@ def test_clasificar_lanza_error_si_ambos_campos_vacios(clasificador):
         clasificador.clasificar(titulo="", texto="")
 
 
-def test_clasificar_lanza_error_si_texto_limpio_queda_vacio(clasificador):
+def test_clasificar_lanza_error_si_texto_limpio_queda_vacio(pipeline_de_prueba):
+    # El limpiador se inyecta a propósito: lo que se verifica aquí es la
+    # reacción del clasificador cuando la limpieza no deja nada, no las
+    # reglas concretas de limpiar_texto (eso lo cubre test_cleaning.py).
+    clasificador = ClasificadorContenido(
+        repositorio_modelo=_RepositorioModeloFalso(pipeline_de_prueba),
+        limpiador=lambda titulo, texto: "",
+    )
     with pytest.raises(TextoVacioError):
-        clasificador.clasificar(titulo="123", texto="!!! ###")
+        clasificador.clasificar(titulo="algo", texto="algo")
 
 
 def test_clasificar_lanza_error_con_tipos_invalidos(clasificador):

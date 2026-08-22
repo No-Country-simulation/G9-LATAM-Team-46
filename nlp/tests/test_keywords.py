@@ -76,12 +76,23 @@ def test_extraer_puede_devolver_bigramas():
     # El modelo v2 se entrenó con ngram_range=(1, 2), así que la respuesta
     # puede incluir bigramas ("apis rest"). Es comportamiento esperado y el
     # contrato documentado debe reflejarlo.
-    corpus = ["apis rest con java", "consultas sql lentas", "componentes react"]
+    # El corpus se arma para que el bigrama gane de verdad: "spring" y
+    # "boot" aparecen sueltos en varios documentos (IDF bajo) mientras que
+    # el par junto sale en uno solo (IDF alto). Si las partes pesaran mas
+    # que el bigrama, el filtro de redundancia las tomaria primero y el
+    # bigrama nunca entraria — que es el comportamiento correcto.
+    corpus = [
+        "spring boot para microservicios",
+        "spring framework en java",
+        "boot loader del sistema",
+        "spring cloud config",
+        "boot camp de programacion",
+    ]
     vectorizador = TfidfVectorizer(min_df=1, ngram_range=(1, 2))
     vectorizador.fit(corpus)
 
     extractor = ExtractorPalabrasClaveTfidf(vectorizador)
-    resultado = extractor.extraer("apis rest con java", top_n=5)
+    resultado = extractor.extraer("spring boot para microservicios", top_n=5)
 
     assert any(" " in termino for termino in resultado)
 
