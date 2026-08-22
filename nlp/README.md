@@ -38,6 +38,7 @@ techmind-nlp-pipeline/
 │   ├── exceptions.py        # Jerarquía de errores propios del dominio
 │   ├── config.py            # Rutas y umbrales centralizados
 │   ├── cleaning.py          # Limpieza de texto (réplica exacta de la del modelo)
+│   ├── tokenization.py      # Tokenización y eliminación de stopwords (ES + EN)
 │   ├── keywords.py          # Extracción de palabras clave por pesos TF-IDF
 │   ├── model_repository.py  # Carga y caché del Pipeline serializado
 │   ├── schemas.py           # Contrato de datos tipado (ResultadoClasificacion)
@@ -45,13 +46,15 @@ techmind-nlp-pipeline/
 │   └── inference.py         # Fachada para la API: procesar_contenido() + precargar_modelo()
 ├── scripts/
 │   ├── validar_modelo.py         # Valida carga del modelo y predicciones de prueba
+│   ├── inspeccionar_modelo.py    # Imprime los hiperparámetros reales del vectorizador
 │   └── simular_entrega_json.py   # Corre el pipeline completo y muestra el JSON final
 ├── models/
 │   ├── README.md                     # Detalle del modelo v2
-│   └── modelo_techmind_v2.joblib     # Modelo real (agrégalo tú aquí, no viaja en este zip)
+│   └── modelo_techmind_v2.joblib     # Modelo real entregado por el equipo de modelado (6,2 MB)
 ├── tests/
 │   ├── __init__.py
 │   ├── test_cleaning.py
+│   ├── test_tokenization.py
 │   ├── test_keywords.py
 │   ├── test_model_repository.py
 │   ├── test_classifier.py
@@ -62,19 +65,28 @@ techmind-nlp-pipeline/
 └── README.md
 ```
 
-**Nota:** el `.joblib` (~6.7 MB) **sí se versiona** en el repo, igual que
+**Nota:** el `.joblib` (6,2 MB) **sí se versiona** en el repo, igual que
 se hacía con el v1: la API lo toma de `models/`. No requiere Git LFS.
 
 ## Cómo levantar el entorno (local, VSCode)
 
 ```bash
+# scikit-learn==1.6.1 usa la version de python 3.12 o 3.13
+# Version de python
+python --version
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+
 python -m venv .venv
 
 # En Windows:
  .venv\Scripts\Activate.ps1
 
 # En Linux - Mac
-source .venv/bin/activate   
+source .venv/bin/activate 
+
+# eliminar el entorno
+Remove-Item -Recurse -Force .venv
      
 pip install -r requirements.txt
 ```
@@ -88,7 +100,7 @@ esa librería (ver "Historial de versiones").
 pytest
 ```
 
-**51 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
+**72 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
 `test_cleaning.py` y `test_schemas.py` usan datos sintéticos, y el
 resto entrena Pipelines pequeños en memoria (ver el uso de "dobles de
 prueba" en `test_classifier.py`). La suite corre rápido y sin depender
@@ -118,8 +130,8 @@ funcione en inglés y español. Salida esperada:
    OK, coinciden con las 8 categorías esperadas
 3) Probando inferencia con textos de ejemplo (EN + ES)...
    CORS error in Flask: 'How to fix CORS error in a Flask REST API'
-   -> Backend  (probabilidad: 0.791)
-      palabras clave: ['cors', 'flask', 'flask rest', 'rest api', 'fix']
+   -> Backend  (probabilidad: 0.830)
+      palabras clave: ['REST API', 'Flask', 'CORS', 'error', 'fix']
    ...
 Validación completa.
 ```
@@ -173,6 +185,47 @@ se agrega un campo adicional con la segunda categoría candidata:
 
 Todos los valores son tipos nativos de Python (`str`, `float`, `list`),
 no tipos de numpy — hay una prueba que lo verifica explícitamente.
+
+## Procesamiento NLP para palabras clave
+
+La extracción de palabras clave constituye un proceso independiente de la
+clasificación. Para este proceso se realizan las siguientes etapas:
+
+```text
+Texto
+  ↓
+Tokenización
+  ↓
+Eliminación de stopwords
+  ↓
+Identificación de términos relevantes
+  ↓
+Extracción de palabras clave
+```
+
+En esta etapa se aplican:
+
+- Tokenización.
+- Eliminación de stopwords en español e inglés.
+- Identificación de términos relevantes mediante el vocabulario TF-IDF.
+- Priorización de términos y bigramas.
+- Eliminación de términos redundantes.
+
+### Lematización
+
+La lematización **no se encuentra implementada en la versión actual**. La
+decisión de no incorporar un lematizador basado en NLTK/WordNet responde al
+carácter bilingüe del corpus (español e inglés) y busca preservar la
+compatibilidad con el procesamiento y vocabulario utilizados por el modelo
+TF-IDF. Por lo tanto, no debe interpretarse la extracción de palabras clave
+como un proceso que incluya lematización.
+
+### Qué usa cada proceso
+
+| Proceso | Tokenización | Stopwords | Lematización | Modelo `.joblib` |
+|---|---|---|---|---|
+| Clasificación | Interna del TF-IDF | No | No | Sí |
+| Palabras clave | Sí | Sí | No | No |
 
 ## Cómo integrarlo en la API
 
@@ -246,10 +299,12 @@ Ver `models/README.md` para el detalle completo (hiperparámetros,
 accuracy, por qué es un solo archivo). `scikit-learn==1.6.1` confirmado
 y fijado en `requirements.txt`.
 
-Resumen del v2 vigente: `TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True,
-min_df=3, max_features=60000)` + `LogisticRegression(C=4.0, max_iter=1000,
-class_weight='balanced')`. Accuracy 0.7761 sobre test estratificado de
-7.658 textos; F1 por categoría entre 0.65 (Backend) y 0.88 (Mobile).
+Resumen del v2 vigente: `TfidfVectorizer(ngram_range=(1,2), sublinear_tf=False,
+min_df=5, max_features=60000, stop_words=None)` + `LogisticRegression(C=4.0,
+max_iter=1000, class_weight=None)`. Valores verificados directamente
+sobre el `.joblib` con `scripts/inspeccionar_modelo.py`. Accuracy 0.7761
+sobre test estratificado de 7.658 textos; F1 por categoría entre 0.65
+(Backend) y 0.88 (Mobile).
 
 ## Estado actual
 
@@ -258,7 +313,7 @@ class_weight='balanced')`. Accuracy 0.7761 sobre test estratificado de
 - [x] Extracción de palabras clave (pesos TF-IDF, sin dependencia de NLTK)
 - [x] Pipeline de inferencia completo, con manejo de errores tipado
 - [x] Modularización aplicando SOLID (ver "Arquitectura")
-- [x] Pruebas automatizadas para cada módulo (51/51 pasando)
+- [x] Pruebas automatizadas para cada módulo (72/72 pasando)
 - [x] Ruta del modelo independiente del directorio de trabajo
 - [x] Precarga del modelo para el arranque de la API
 - [x] Filtro de n-gramas redundantes en las palabras clave
@@ -291,3 +346,19 @@ en español que con el modelo v1 daba 0.16 de confianza y no reconocía
 ninguna palabra, con el modelo v2 reconoce varias palabras reales y
 sube a 0.20-0.87 según el caso (ver `resumen_demos_pruebas.md` para el
 detalle completo de las pruebas).
+
+## Consideraciones finales
+
+- El `.joblib` corresponde al modelo entrenado por el equipo de Machine
+  Learning.
+- La limpieza de entrada debe ser compatible con el entrenamiento del modelo.
+- La clasificación y la extracción de palabras clave son procesos
+  independientes.
+- La tokenización y eliminación de stopwords se utilizan en el proceso de
+  extracción de palabras clave.
+- La lematización no está implementada en la versión actual.
+- La extracción de palabras clave utiliza el vocabulario TF-IDF y mecanismos
+  de ponderación y filtrado de términos.
+- No se debe modificar el `.joblib` para incorporar transformaciones que no
+  estuvieron presentes durante su entrenamiento.
+- La versión de `scikit-learn` debe mantenerse conforme a `requirements.txt`.

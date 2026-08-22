@@ -4,14 +4,17 @@ Modelo **real** entrenado por el equipo de modelado, versión final del
 hackatón.
 
 - `modelo_techmind_v2.joblib` — un único `Pipeline` de scikit-learn
-  serializado (~6.4 MB), entrenado con el dataset bilingüe (inglés +
+  serializado (6,2 MB), entrenado con el dataset bilingüe (inglés +
   español). Reemplaza los dos archivos del v1.
-  - `TfidfVectorizer`: `ngram_range=(1, 2)`, `sublinear_tf=True`,
-    `min_df=3`, `max_features=60000`, lista de stopwords bilingüe
-    ampliada (678 términos).
+  - `TfidfVectorizer`: `ngram_range=(1, 2)`, `sublinear_tf=False`,
+    `min_df=5`, `max_features=60000`, **sin lista de stopwords**
+    (`stop_words=None`). Verificado con
+    `scripts/inspeccionar_modelo.py`: el vocabulario contiene `the`,
+    y llega justo a las 60.000 features, es decir que `max_features`
+    está recortando (había más candidatos tras `min_df=5`).
   - `LogisticRegression`: `C=4.0`, `max_iter=1000`,
-    `class_weight='balanced'`.
-  - Accuracy **0.7751** sobre test estratificado de 7.658 textos.
+    `class_weight=None` (sin rebalanceo de clases).
+  - Accuracy **0.7761** sobre test estratificado de 7.658 textos.
     F1 por categoría entre 0.65 (Backend) y 0.88 (Mobile).
 
 El modelo entregado se re-entrenó con el 100 % del dataset; el accuracy
@@ -55,5 +58,18 @@ python scripts/validar_modelo.py
 
 Comprueba que el `.joblib` cargue, que las 8 categorías coincidan con
 las esperadas y que la inferencia funcione en ambos idiomas. Última
-corrida: carga OK, 8/8 categorías, cuatro casos de prueba acertados con
-confianza entre 0.794 y 0.999.
+corrida: carga OK, 8/8 categorías, cinco casos de prueba. Cuatro
+aciertan con confianza entre 0.787 y 0.992; el quinto
+("Cómo implementar autenticación segura con tokens JWT en una API")
+queda en 0.353 y devuelve Seguridad como `categoria_alternativa`. El
+mismo texto en inglés da Seguridad con 0.979 — la diferencia es de
+cobertura del vocabulario en español, no de ambigüedad entre
+categorías.
+
+Para inspeccionar los hiperparámetros reales del vectorizador:
+
+```bash
+python scripts/inspeccionar_modelo.py
+```
+
+Los valores de este documento salen de ahí, no del notebook.

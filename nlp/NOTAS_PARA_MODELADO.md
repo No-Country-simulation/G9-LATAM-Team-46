@@ -13,6 +13,12 @@ el mismo split estratificado de 7.658 textos:
 | **C. Lucio v2 (entregado)** | **0.7755** | **0.7759** |
 | D. Híbrido (v3 candidato) | 0.7834 | 0.7834 |
 
+Los cuatro valores salen de la re-corrida de la ablación. El accuracy
+de referencia del modelo entregado es **0.7761**, el del
+`classification_report` del notebook original; la diferencia con el
+0.7755 de esta tabla es ruido de re-ejecución, no otro modelo. Usar
+0.7761 en la documentación y en la presentación.
+
 **Se entrega C**, aunque D mide 0.0079 más. Razones:
 
 1. La diferencia son 60 textos de 7.658 — 1,67 errores estándar (no
@@ -33,6 +39,12 @@ bajos y dígitos. Costaba **1,5 puntos** de accuracy. Está corregido en
 `notebook_edmer_corregido.py` por si hay un v3.
 
 Lo que sigue abajo se mantiene como referencia para una versión futura.
+
+**Nota (post-entrega):** el punto 1 ya está mitigado sin re-entrenar. El
+filtro de stopwords en `src/keywords.py` limpia las palabras clave en
+post-proceso, así que ampliar `STOP` y re-entrenar dejó de ser necesario
+para la demo. Queda un hueco conocido: los adverbios interrogativos
+(`cómo`, `qué`, `cuándo`) todavía pasan el filtro.
 
 ---
 

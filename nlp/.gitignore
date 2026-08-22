@@ -5,7 +5,7 @@ __pycache__/
 venv/
 
 # NOTA: el modelo SÍ se versiona (el equipo ya lo hacía con el v1 y la API
-# lo toma del repo). Pesa ~6.7 MB, muy por debajo del límite de 100 MB de
+# lo toma del repo). Pesa 6,2 MB, muy por debajo del límite de 100 MB de
 # GitHub, así que no hace falta Git LFS. Si algún día supera los 50 MB,
 # GitHub empezará a avisar y habrá que moverlo a LFS o a almacenamiento
 # externo.
