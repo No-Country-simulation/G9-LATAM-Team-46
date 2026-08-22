@@ -208,7 +208,7 @@ curl -X POST http://127.0.0.1:8000/contenido \
 {
   "categoria": "Backend",
   "probabilidad": 1.0,
-  "informacion_adicional": ["spring boot", "boot", "apis rest", "controladores"]
+  "informacion_adicional": ["Spring Boot", "java spring", "APIs", "REST", "servicios"]
 }
 ```
 
@@ -227,7 +227,7 @@ curl -X POST http://127.0.0.1:8000/contenido \
 {
   "categoria": "DevOps / Cloud",
   "probabilidad": 0.99,
-  "informacion_adicional": ["contenedores docker", "empaquetar", "kubernetes", "despliegue"]
+  "informacion_adicional": ["Kubernetes", "Docker", "contenedores", "Despliegue", "aplicación"]
 }
 ```
 
@@ -246,7 +246,7 @@ curl -X POST http://127.0.0.1:8000/contenido \
 {
   "categoria": "Seguridad",
   "probabilidad": 1.0,
-  "informacion_adicional": ["autenticación", "jwt", "api tokens", "buenas prácticas"]
+  "informacion_adicional": ["JWT", "Autenticación", "tokens", "usuarios", "Buenas"]
 }
 ```
 
@@ -471,7 +471,7 @@ cd nlp && pytest
 | Ubicación | Cubre |
 |---|---|
 | `backend/tests/` | Endpoint `/contenido`, validaciones y respuestas |
-| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, repositorio del modelo y esquemas — **56 pruebas** |
+| `nlp/tests/` | Clasificador, limpieza de texto, extracción de palabras clave, repositorio del modelo y esquemas, tokenización — **72 pruebas** |
 
 ---
 

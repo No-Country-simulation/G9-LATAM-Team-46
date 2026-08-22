@@ -39,14 +39,16 @@ techmind-nlp-pipeline/
 │   ├── exceptions.py        # Jerarquía de errores propios del dominio
 │   ├── config.py            # Rutas y umbrales centralizados
 │   ├── cleaning.py          # Limpieza de texto (réplica exacta de la del modelo)
-│   ├── keywords.py          # Extracción de palabras clave por pesos TF-IDF
+│   ├── keywords.py          # Palabras clave: pesos TF-IDF ponderados por categoría
 │   ├── model_repository.py  # Carga y caché del Pipeline serializado
 │   ├── schemas.py           # Contrato de datos tipado (ResultadoClasificacion)
 │   ├── classifier.py        # Orquesta: limpieza -> predicción -> palabras clave
+│   ├── tokenization.py      # Tokenización y stopwords, para análisis
 │   ├── recommender.py       # Contenido relacionado por similitud del coseno
 │   └── inference.py         # Fachada para la API: procesar_contenido() + precargar_modelo()
 ├── scripts/
 │   ├── validar_modelo.py         # Valida carga del modelo y predicciones de prueba
+│   ├── inspeccionar_modelo.py    # Muestra los hiperparámetros del Pipeline
 │   └── simular_entrega_json.py   # Corre el pipeline completo y muestra el JSON final
 ├── models/
 │   ├── README.md                      # Detalle de los artefactos
@@ -60,6 +62,7 @@ techmind-nlp-pipeline/
 │   ├── test_keywords.py
 │   ├── test_model_repository.py
 │   ├── test_classifier.py
+│   ├── test_tokenization.py
 │   ├── test_schemas.py       # Contrato de salida
 │   └── test_inference.py     # Fachada que consume la API
 ├── pytest.ini
@@ -98,7 +101,7 @@ porque así se entrenó.
 pytest
 ```
 
-**56 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
+**72 pruebas, todas pasando.** Ninguna necesita el `.joblib` real:
 `test_cleaning.py` y `test_schemas.py` usan datos sintéticos, y el
 resto entrena Pipelines pequeños en memoria (ver el uso de "dobles de
 prueba" en `test_classifier.py`). La suite corre rápido y sin depender
@@ -129,7 +132,7 @@ funcione en inglés y español. Salida esperada:
 3) Probando inferencia con textos de ejemplo (EN + ES)...
    CORS error in Flask: 'How to fix CORS error in a Flask REST API'
    -> Backend  (probabilidad: 0.819)
-      palabras clave: ['cors', 'flask', 'rest api', 'error', 'fix']
+      palabras clave: ['REST API', 'Flask', 'CORS', 'error', 'fix']
    ...
 Validación completa.
 ```
@@ -157,17 +160,23 @@ resultado = procesar_contenido(titulo="...", texto="...")
 {
   "categoria": "Backend",
   "probabilidad": 0.99,
-  "informacion_adicional": ["apis rest", "java spring", "conceptos", "creacion", "utilizando"]
+  "informacion_adicional": ["Spring Boot", "java spring", "APIs", "REST", "servicios"]
 }
 ```
 
-**Sobre `informacion_adicional`:** el vectorizador del modelo v2 se
-entrenó con `ngram_range=(1, 2)`, así que los términos pueden ser
-palabras sueltas (`"docker"`) o pares (`"apis rest"`). Van ordenados de
-mayor a menor peso TF-IDF. La cantidad se controla con
-`config.TOP_N_PALABRAS_CLAVE` (actualmente **5**; la función de
-referencia del notebook de modelado usa 4 — si se quiere el mismo
-resultado en la demo, hay que igualar ese valor).
+**Sobre `informacion_adicional`:** el vectorizador se entrenó con
+`ngram_range=(1, 2)`, así que los términos pueden ser palabras sueltas
+(`"Docker"`) o pares (`"REST API"`). La cantidad se controla con
+`config.TOP_N_PALABRAS_CLAVE`, actualmente **5**.
+
+El orden no sale solo del peso TF-IDF: los términos se ponderan por los
+coeficientes que el clasificador le asigna a la categoría predicha. Por
+eso la lista es coherente con la respuesta — en un texto sobre sesiones
+en Redis desde una API de Node con Docker, si el modelo dice *Bases de
+Datos* encabeza `Redis`, y si dice *DevOps / Cloud* encabeza `Docker`.
+
+Los términos conservan la grafía del texto original (`Terraform`, `AWS`,
+`JWT`), que es como se muestran en pantalla.
 
 Si `probabilidad` cae por debajo de 0.5 (`config.UMBRAL_CATEGORIA_ALTERNATIVA`),
 se agrega un campo adicional con la segunda categoría candidata:
@@ -176,7 +185,7 @@ se agrega un campo adicional con la segunda categoría candidata:
 {
   "categoria": "Backend",
   "probabilidad": 0.2,
-  "informacion_adicional": ["consulta", "optimizar", "tarda"],
+  "informacion_adicional": ["Consulta", "optimizar"],
   "categoria_alternativa": "Bases de Datos"
 }
 ```
@@ -273,7 +282,7 @@ y 0.85 (Mobile). Validación cruzada de 5 particiones: 0.7508 ± 0.0019.
 - [x] Motor de contenido relacionado (`src/recommender.py`)
 - [x] Pipeline de inferencia completo, con manejo de errores tipado
 - [x] Modularización aplicando SOLID (ver "Arquitectura")
-- [x] Pruebas automatizadas para cada módulo (56/56 pasando)
+- [x] Pruebas automatizadas para cada módulo (72/72 pasando)
 - [x] Rutas independientes del directorio de trabajo y de la disposición
       de carpetas, con `TECHMIND_MODELOS` por encima
 - [x] Precarga del modelo para el arranque de la API

@@ -108,7 +108,7 @@ machine_learning/sugerencias_y_relacionados.ipynb  -> matriz_historica.pkl
                                                       diccionario_categorias.json
 ```
 
-Después, `cd nlp && pytest` (56 pruebas) y `python scripts/validar_modelo.py`.
+Después, `cd nlp && pytest` (72 pruebas) y `python scripts/validar_modelo.py`.
 
 ---
 

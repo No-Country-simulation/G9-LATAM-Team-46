@@ -1,94 +1,153 @@
-"""Pruebas de cleaning.limpiar_texto — deben reflejar exactamente el
-preprocesamiento del notebook `limpieza_y_eda_techmind_v2.ipynb`, que
-produjo el dataset con el que se entrenó el modelo v2.
+"""
+Pruebas de la limpieza de texto.
 
-Si alguna de estas pruebas falla, el texto que recibe el modelo en
-producción dejó de parecerse al que vio al entrenarse."""
+Estas pruebas custodian el CONTRATO con el entrenamiento del modelo v2:
+cada aserción corresponde a una característica verificada en el
+vocabulario guardado dentro del .joblib. Si alguna falla, el texto que
+llega al vectorizador dejó de parecerse al que se usó para entrenarlo, y
+la exactitud cae sin que aparezca ningún error en tiempo de ejecución.
+"""
 
-from src.cleaning import limpiar_texto
-
-
-def test_limpiar_texto_conserva_terminos_tecnicos_con_simbolos():
-    # El motivo de conservar + # . _ - / : son los términos con mayor
-    # poder discriminante y una limpieza genérica los destruye
-    # (`C++` y `C#` quedarían vacíos, `CI/CD` desaparecería).
-    assert limpiar_texto("C++") == "C++"
-    assert limpiar_texto("C#") == "C#"
-    assert limpiar_texto("CI/CD") == "CI/CD"
-    assert limpiar_texto("TCP/IP") == "TCP/IP"
-    assert limpiar_texto("node.js") == "node.js"
-    assert limpiar_texto(".NET") == ".NET"
-    assert limpiar_texto("front-end") == "front-end"
+from src.cleaning import (
+    corregir_ortografia,
+    limpiar_texto,
+    preparar_entrada_modelo,
+)
 
 
-def test_limpiar_texto_conserva_digitos_de_terminos_tecnicos():
-    # HTML5, ES6 o Python 3 pierden su significado sin el número.
-    resultado = limpiar_texto("HTML5 y ES6 sobre Python 3")
-    assert "HTML5" in resultado
-    assert "ES6" in resultado
-    assert "3" in resultado
+# --- Lo que la limpieza SÍ debe eliminar -----------------------------------
 
 
 def test_limpiar_texto_elimina_urls():
-    resultado = limpiar_texto("Revisa https://ejemplo.com/docs para más info")
-    assert "https" not in resultado
+    resultado = limpiar_texto("Mira https://ejemplo.com/ruta para el detalle")
+    assert "http" not in resultado
     assert "ejemplo" not in resultado
-    assert "info" in resultado
+    assert "Mira" in resultado
 
 
-def test_limpiar_texto_elimina_encabezado_de_publicacion():
-    # Los artículos de Medium arrastran una línea "Published ...:" que
-    # no aporta señal técnica.
-    assert limpiar_texto("Published First: https://medium.com/x") == ""
+def test_limpiar_texto_elimina_encabezado_published():
+    resultado = limpiar_texto("Published on: 12 de marzo\nContenido real")
+    assert "Published" not in resultado
+    assert "Contenido real" in resultado
 
 
-def test_limpiar_texto_normaliza_saltos_de_linea_y_espacios():
-    resultado = limpiar_texto("primera línea\nsegunda\t\tlínea\r\ntercera")
-    assert "\n" not in resultado
-    assert "  " not in resultado
-    assert resultado == "primera línea segunda línea tercera"
+def test_limpiar_texto_elimina_signos_no_tecnicos():
+    resultado = limpiar_texto("¿Qué es esto? ¡Increíble! (de verdad)")
+    for simbolo in ("¿", "?", "¡", "!", "(", ")"):
+        assert simbolo not in resultado
 
 
-def test_limpiar_texto_colapsa_caracteres_repetidos():
-    assert limpiar_texto("looool") == "lool"
-    assert limpiar_texto("genial???") == "genial?" or limpiar_texto("genial???") == "genial"
+def test_limpiar_texto_normaliza_espacios_y_saltos():
+    assert limpiar_texto("uno\n\ndos   tres\r") == "uno dos tres"
 
 
-def test_limpiar_texto_corrige_erratas_frecuentes():
-    resultado = limpiar_texto("teh error al recieve el dato")
-    assert "the" in resultado
-    assert "receive" in resultado
-    assert "teh" not in resultado
+# --- Lo que la limpieza NO debe eliminar (contrato con el entrenamiento) ---
 
 
-def test_limpiar_texto_conserva_acentos_en_espanol():
-    # Los acentos SÍ deben conservarse: el vocabulario del vectorizador
-    # se entrenó con acentos, así que eliminarlos haría que los términos
-    # en español dejen de coincidir con lo aprendido.
-    resultado = limpiar_texto("Cómo optimizar una consulta que tarda mucho")
+def test_conserva_caracteres_tecnicos():
+    """El vocabulario del modelo distingue C++ de C y CI/CD de CI.
+
+    Esta es la prueba que la versión anterior del módulo no pasaba: al
+    eliminar todo carácter no alfanumérico, `c++` quedaba en `c` y
+    `ci/cd` en `ci cd`.
+    """
+    resultado = limpiar_texto("Aprende C++, C# y CI/CD con front-end y node.js")
+    for fragmento in ("C++", "C#", "CI/CD", "front-end", "node.js"):
+        assert fragmento in resultado
+
+
+def test_conserva_digitos():
+    """El vocabulario del modelo tiene 987 términos con dígitos.
+
+    `s3`, `ec2`, `ubuntu 24` son señal real de DevOps / Cloud. Eliminar
+    los números la borra por completo.
+    """
+    resultado = limpiar_texto("Desplegar en AWS S3 y EC2 con Ubuntu 24")
+    for fragmento in ("S3", "EC2", "24"):
+        assert fragmento in resultado
+
+
+def test_conserva_palabras_de_dos_letras():
+    """El vocabulario del modelo tiene 497 términos de dos letras."""
+    resultado = limpiar_texto("Uso js y go en mi stack")
     palabras = resultado.split()
-    assert "Cómo" in palabras
-    assert "optimizar" in palabras
+    assert "js" in palabras
+    assert "go" in palabras
 
 
-def test_limpiar_texto_conserva_enie_y_dieresis():
-    resultado = limpiar_texto("Diseño de esquemas con pingüino como ejemplo")
-    palabras = resultado.split()
-    assert "Diseño" in palabras
-    assert "pingüino" in palabras
+def test_no_pasa_a_minusculas():
+    """El paso a minúsculas lo hace el propio TfidfVectorizer.
+
+    Hacerlo aquí impide recuperar la grafía original de las palabras
+    clave que se devuelven al usuario ("Spring Boot" en vez de
+    "spring boot").
+    """
+    resultado = limpiar_texto("Spring Boot con Java")
+    assert "Spring Boot" in resultado
 
 
-def test_limpiar_texto_no_pasa_a_minusculas():
-    # El TfidfVectorizer ya normaliza a minúsculas por su cuenta; hacerlo
-    # aquí además sería redundante y se apartaría del entrenamiento.
-    assert limpiar_texto("Docker") == "Docker"
+def test_conserva_stopwords():
+    """El entrenamiento NO eliminó stopwords: el vocabulario tiene `the`.
+
+    El IDF ya las neutraliza (IDF de `the` = 1.07). Quitarlas en
+    inferencia desalinea el texto respecto al vocabulario aprendido.
+    """
+    resultado = limpiar_texto("This is the way to do it")
+    for palabra in ("the", "is", "to"):
+        assert palabra in resultado.split()
 
 
-def test_limpiar_texto_input_no_string_retorna_vacio():
+def test_conserva_acentos_enie_y_dieresis():
+    resultado = limpiar_texto("Cómo optimizar el diseño de un pingüino en español")
+    for palabra in ("Cómo", "diseño", "pingüino", "español"):
+        assert palabra in resultado.split()
+
+
+# --- Corrección ortográfica ------------------------------------------------
+
+
+def test_corrige_letras_repetidas():
+    assert corregir_ortografia("holaaaaa") == "holaa"
+
+
+def test_corrige_puntuacion_repetida():
+    assert corregir_ortografia("qué???") == "qué?"
+
+
+def test_corrige_erratas_conocidas():
+    assert corregir_ortografia("teh funtion is wierd") == "the function is weird"
+
+
+# --- Entradas no válidas ---------------------------------------------------
+
+
+def test_input_no_string_retorna_vacio():
     assert limpiar_texto(None) == ""
     assert limpiar_texto(123) == ""
+    assert corregir_ortografia(None) == ""
 
 
-def test_limpiar_texto_texto_vacio_retorna_vacio():
-    assert limpiar_texto("") == ""
-    assert limpiar_texto("     ") == ""
+def test_solo_simbolos_retorna_vacio():
+    assert limpiar_texto("¡¡¡ ¿¿¿ ***") == ""
+
+
+# --- Ensamblado de la entrada del modelo -----------------------------------
+
+
+def test_preparar_entrada_une_titulo_y_texto():
+    assert preparar_entrada_modelo("Docker", "contenedores") == "Docker contenedores"
+
+
+def test_preparar_entrada_funciona_sin_titulo():
+    assert preparar_entrada_modelo("", "solo texto") == "solo texto"
+
+
+def test_preparar_entrada_limpia_cada_campo_por_separado():
+    """Una URL al final del título no debe pegarse a la primera palabra
+    del texto: por eso se limpia campo por campo y luego se une."""
+    resultado = preparar_entrada_modelo("Ver https://foo.com", "Spring Boot")
+    assert resultado == "Ver Spring Boot"
+
+
+def test_preparar_entrada_sin_contenido_util_retorna_vacio():
+    assert preparar_entrada_modelo("", "¡¡¡ ???") == ""

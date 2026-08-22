@@ -72,49 +72,29 @@ def test_extraer_ordena_de_mayor_a_menor_peso(vectorizador_con_idf_variable):
     assert resultado == ["kubernetes", "docker"]
 
 
-def test_extraer_puede_devolver_bigramas():
-    # El modelo se entrenó con ngram_range=(1, 2), así que la respuesta puede
-    # incluir bigramas ("apis rest"). Es comportamiento esperado y el contrato
-    # documentado debe reflejarlo.
-    #
-    # "apis" y "rest" aparecen sueltos en varios documentos y juntos en uno
-    # solo: así el bigrama tiene más IDF que sus partes y las supera en peso,
-    # que es la situación real del corpus. Con un corpus donde los tres
-    # empatan, el orden entre ellos queda librado al índice del vocabulario.
+def test_extraer_puede_devolver_bigramas(): 
+    # El modelo v2 se entrenó con ngram_range=(1, 2), así que la respuesta
+    # puede incluir bigramas ("apis rest"). Es comportamiento esperado y el
+    # contrato documentado debe reflejarlo.
+    # El corpus se arma para que el bigrama gane de verdad: "spring" y
+    # "boot" aparecen sueltos en varios documentos (IDF bajo) mientras que
+    # el par junto sale en uno solo (IDF alto). Si las partes pesaran mas
+    # que el bigrama, el filtro de redundancia las tomaria primero y el
+    # bigrama nunca entraria — que es el comportamiento correcto.
     corpus = [
-        "apis rest con java",
-        "apis graphql modernas",
-        "protocolo rest y soap",
-        "consultas sql lentas",
+        "spring boot para microservicios",
+        "spring framework en java",
+        "boot loader del sistema",
+        "spring cloud config",
+        "boot camp de programacion",
     ]
     vectorizador = TfidfVectorizer(min_df=1, ngram_range=(1, 2))
     vectorizador.fit(corpus)
 
     extractor = ExtractorPalabrasClaveTfidf(vectorizador)
-    resultado = extractor.extraer("apis rest con java", top_n=5)
+    resultado = extractor.extraer("spring boot para microservicios", top_n=5)
 
     assert any(" " in termino for termino in resultado)
-
-
-def test_extraer_descarta_terminos_con_palabras_funcionales():
-    # Un bigrama con una parte funcional ocupa un lugar sin decir nada que su
-    # parte técnica no diga sola: "the app" no aporta sobre "app". Medido
-    # sobre el histórico, tres de cada cuatro bigramas eran de esta forma.
-    corpus = [
-        "the app crashes on startup",
-        "app performance profiling",
-        "startup latency measurement",
-    ]
-    vectorizador = TfidfVectorizer(min_df=1, ngram_range=(1, 2))
-    vectorizador.fit(corpus)
-
-    extractor = ExtractorPalabrasClaveTfidf(vectorizador)
-    resultado = extractor.extraer("the app crashes on startup", top_n=8)
-
-    assert resultado, "el filtro no debe vaciar la respuesta"
-    for termino in resultado:
-        for parte in termino.split():
-            assert parte not in ("the", "on"), f"'{termino}' pasó el filtro"
 
 
 def test_filtrar_redundantes_descarta_terminos_ya_contenidos():

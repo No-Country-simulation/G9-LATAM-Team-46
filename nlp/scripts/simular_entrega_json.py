@@ -25,7 +25,7 @@ CASOS_DE_PRUEBA = [
     {"titulo": "Consulta lenta", "texto": "Cómo optimizar una consulta que tarda mucho en ejecutarse"},
     {"titulo": "Autenticación", "texto": "Cómo implementar autenticación segura con tokens JWT en una API"},
     {"titulo": "Despliegue con contenedores", "texto": "Guía para desplegar una aplicación con Docker y Kubernetes"},
-    {"titulo": "Página web en español", "texto": "Como hacer una pagina web html"},
+    {"titulo": "Mi primera página web", "texto": "Como hacer una pagina web html"},
 ]
 
 
