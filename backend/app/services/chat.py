@@ -19,6 +19,7 @@ def _obtener_cliente() -> OpenAI:
         )
     return _cliente
 
+
 def construir_prompt(texto_usuario: str, categoria: str, probabilidad: float, palabras_clave: list[str]) -> str:
     contexto = (
         f"El siguiente contenido técnico fue clasificado por nuestro modelo como '{categoria}' "
@@ -35,7 +36,7 @@ def construir_prompt(texto_usuario: str, categoria: str, probabilidad: float, pa
     return contexto
 
 
-def generar_respuesta(mensajes: list[dict]) -> str:
+def generar_respuesta(mensajes: list[dict], resultado_clasificacion=None) -> str:
     try:
         respuesta = _obtener_cliente().chat.completions.create(
             model="deepseek-chat",
@@ -44,7 +45,16 @@ def generar_respuesta(mensajes: list[dict]) -> str:
         return respuesta.choices[0].message.content
     except Exception as e:
         logger.error(f"Fallo al consultar DeepSeek: {e}")
-        return "No pude generar una explicación en este momento, pero aquí está la clasificación."
+        if resultado_clasificacion is None:
+            return "No pude generar una explicación en este momento, pero aquí está la clasificación."
+        categoria = resultado_clasificacion.categoria
+        confianza = resultado_clasificacion.probabilidad
+        palabras = ", ".join(resultado_clasificacion.informacion_adicional)
+        return (
+            f"No pude conectar con el asistente en este momento, pero según nuestro modelo "
+            f"esto se clasifica como '{categoria}' con {confianza:.0%} de confianza. "
+            f"Palabras clave detectadas: {palabras}."
+        )
 
 
 def responder_chat(texto_usuario: str, historial: list) -> str:
@@ -61,4 +71,4 @@ def responder_chat(texto_usuario: str, historial: list) -> str:
     mensajes = [{"role": m.rol, "content": m.contenido} for m in historial]
     mensajes.append({"role": "user", "content": prompt})
 
-    return generar_respuesta(mensajes)
+    return generar_respuesta(mensajes, resultado_clasificacion=resultado)
