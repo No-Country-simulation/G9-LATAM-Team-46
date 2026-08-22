@@ -7,11 +7,17 @@ from app.services.clasificador import clasificar_contenido
 
 logger = logging.getLogger(__name__)
 
-cliente = OpenAI(
-    api_key=settings.deepseek_api_key,
-    base_url="https://api.deepseek.com",
-)
+_cliente = None
 
+
+def _obtener_cliente() -> OpenAI:
+    global _cliente
+    if _cliente is None:
+        _cliente = OpenAI(
+            api_key=settings.deepseek_api_key,
+            base_url="https://api.deepseek.com",
+        )
+    return _cliente
 
 def construir_prompt(texto_usuario: str, categoria: str, probabilidad: float, palabras_clave: list[str]) -> str:
     contexto = (
@@ -31,7 +37,7 @@ def construir_prompt(texto_usuario: str, categoria: str, probabilidad: float, pa
 
 def generar_respuesta(mensajes: list[dict]) -> str:
     try:
-        respuesta = cliente.chat.completions.create(
+        respuesta = _obtener_cliente().chat.completions.create(
             model="deepseek-chat",
             messages=mensajes,
         )

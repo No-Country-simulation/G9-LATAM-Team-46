@@ -19,7 +19,8 @@ class CategoriaRanking(BaseModel):
     
 class ContenidoRelacionado(BaseModel):
     titulo: str
-    texto: str
+    categoria: str
+    similitud: float
 
 
 class ContenidoSalida(BaseModel):

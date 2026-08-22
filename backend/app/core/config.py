@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_minutos_expiracion: int = 60
     
-    dataset_url: str | None = None
+    matriz_historica_url: str | None = None
+    sugerencias_botones_url: str | None = None
 
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env")
 
