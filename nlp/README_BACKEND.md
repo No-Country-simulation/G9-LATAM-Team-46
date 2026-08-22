@@ -65,11 +65,11 @@ Y así se ven las palabras clave que devuelve la API:
 ```
 "Pipelines de CI/CD con Docker y node.js sobre buckets S3 en AWS"
    actual : buckets, pipelines, aws, docker, node
-   módulo : buckets, pipelines, ci cd, s3, node js
+   módulo : ci cd, node js, AWS, S3, Docker
 
 "Autenticación OAuth2 y JWT con maquetado HTML5 y ES6"
    actual : oauth, jwt, html
-   módulo : html5, oauth2, es6, jwt
+   módulo : OAuth2, JWT, Autenticación, HTML5, ES6
 ```
 
 **Sobre la clasificación, sin exagerar:** con contenido de largo normal —lo
@@ -101,7 +101,7 @@ Devuelve un dict listo para `json.dumps()`:
 {
   "categoria": "DevOps / Cloud",
   "probabilidad": 0.999,
-  "informacion_adicional": ["contenedores", "kubernetes", "aws", "docker"]
+  "informacion_adicional": ["Kubernetes", "AWS", "Docker", "Contenedores", "Despliegue"]
 }
 ```
 
