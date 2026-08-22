@@ -29,6 +29,8 @@ CASOS_DE_PRUEBA = [
     ("Indexing en PostgreSQL", "Best indexing strategy for a PostgreSQL table"),
     ("Autenticación segura", "Cómo implementar autenticación segura con tokens JWT en una API"),
     ("Despliegue con contenedores", "Guía para desplegar una aplicación con Docker y Kubernetes"),
+    ("Secure authentication with JWT",
+     "How to implement secure authentication with JWT tokens in an API"),
 ]
 
 
