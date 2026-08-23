@@ -11,6 +11,7 @@ _extractor_palabras_clave = None
 TOP_K_PALABRAS_CLAVE = 4
 UMBRAL_OTRAS_CATEGORIAS = 0.05
 TOPE_OTRAS_CATEGORIAS = 4
+UMBRAL_CONFIANZA_RELACIONADOS = 0.5
 
 
 def _obtener_extractor(pipeline):
@@ -34,6 +35,7 @@ def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
     proba = modelo.predict_proba([texto_preparado])[0]
     idx = proba.argmax()
     categoria_ganadora = modelo.classes_[idx]
+    probabilidad_ganadora = float(proba[idx])
 
     palabras_clave = _obtener_extractor(modelo).extraer(
         texto_preparado, TOP_K_PALABRAS_CLAVE, categoria_ganadora
@@ -49,15 +51,17 @@ def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
         if proba[i] >= UMBRAL_OTRAS_CATEGORIAS
     ][:TOPE_OTRAS_CATEGORIAS]
 
+     # Filtro de confianza: evita relacionados falsos con texto ambiguo o no tecnico.
     contenidos_relacionados = []
-    recomendador = cargar_recomendador()
-    if recomendador is not None:
-        relacionados_raw = recomendador.recomendar(texto_preparado, top_n=3)
-        contenidos_relacionados = [ContenidoRelacionado(**r) for r in relacionados_raw]
+    if probabilidad_ganadora >= UMBRAL_CONFIANZA_RELACIONADOS:
+        recomendador = cargar_recomendador()
+        if recomendador is not None:
+            relacionados_raw = recomendador.recomendar(texto_preparado, top_n=3)
+            contenidos_relacionados = [ContenidoRelacionado(**r) for r in relacionados_raw]
 
     return ContenidoSalida(
         categoria=categoria_ganadora,
-        probabilidad=round(float(proba[idx]), 2),
+        probabilidad=round(probabilidad_ganadora, 2),
         informacion_adicional=palabras_clave,
         ranking_categorias=ranking_categorias,
         contenidos_relacionados=contenidos_relacionados,
