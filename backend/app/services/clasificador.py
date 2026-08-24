@@ -1,11 +1,26 @@
 from fastapi import HTTPException, status
-from app.schemas.contenido import ContenidoEntrada, ContenidoSalida
+from app.schemas.contenido import ContenidoEntrada, ContenidoSalida, CategoriaRanking, ContenidoRelacionado
 from app.ml.loader import cargar_modelo
-from app.ml.preprocesamiento import limpiar
+from app.ml.preprocesamiento import preparar_entrada_modelo
+from app.ml.keywords import ExtractorPalabrasClaveTfidf
+from app.ml.recomendador import cargar_recomendador
 
 modelo = cargar_modelo()
+_extractor_palabras_clave = None
 
 TOP_K_PALABRAS_CLAVE = 4
+UMBRAL_OTRAS_CATEGORIAS = 0.05
+TOPE_OTRAS_CATEGORIAS = 4
+UMBRAL_CONFIANZA_RELACIONADOS = 0.5
+
+
+def _obtener_extractor(pipeline):
+    global _extractor_palabras_clave
+    if _extractor_palabras_clave is None:
+        vectorizador = pipeline.named_steps["tfidf"]
+        clasificador = pipeline.named_steps.get("clf")
+        _extractor_palabras_clave = ExtractorPalabrasClaveTfidf(vectorizador, clasificador)
+    return _extractor_palabras_clave
 
 
 def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
@@ -15,19 +30,39 @@ def clasificar_contenido(entrada: ContenidoEntrada) -> ContenidoSalida:
             detail="El modelo de clasificación aún no está disponible. Intenta más tarde.",
         )
 
-    texto_limpio = limpiar(f"{entrada.titulo} {entrada.texto}")
+    texto_preparado = preparar_entrada_modelo(entrada.titulo, entrada.texto)
 
-    proba = modelo.predict_proba([texto_limpio])[0]
+    proba = modelo.predict_proba([texto_preparado])[0]
     idx = proba.argmax()
+    categoria_ganadora = modelo.classes_[idx]
+    probabilidad_ganadora = float(proba[idx])
 
-    tfidf = modelo.named_steps["tfidf"]
-    vector = tfidf.transform([texto_limpio])
-    vocabulario = tfidf.get_feature_names_out()
-    top_idx = vector.toarray()[0].argsort()[::-1][:TOP_K_PALABRAS_CLAVE]
-    palabras_clave = [vocabulario[i] for i in top_idx if vector[0, i] > 0]
+    palabras_clave = _obtener_extractor(modelo).extraer(
+        texto_preparado, TOP_K_PALABRAS_CLAVE, categoria_ganadora
+    )
+
+    orden_ranking = proba.argsort()[::-1]
+    ranking_categorias = [
+        CategoriaRanking(
+            categoria=modelo.classes_[i],
+            probabilidad=round(float(proba[i]), 2),
+        )
+        for i in orden_ranking[1:]
+        if proba[i] >= UMBRAL_OTRAS_CATEGORIAS
+    ][:TOPE_OTRAS_CATEGORIAS]
+
+     # Filtro de confianza: evita relacionados falsos con texto ambiguo o no tecnico.
+    contenidos_relacionados = []
+    if probabilidad_ganadora >= UMBRAL_CONFIANZA_RELACIONADOS:
+        recomendador = cargar_recomendador()
+        if recomendador is not None:
+            relacionados_raw = recomendador.recomendar(texto_preparado, top_n=3)
+            contenidos_relacionados = [ContenidoRelacionado(**r) for r in relacionados_raw]
 
     return ContenidoSalida(
-        categoria=modelo.classes_[idx],
-        probabilidad=round(float(proba[idx]), 2),
+        categoria=categoria_ganadora,
+        probabilidad=round(probabilidad_ganadora, 2),
         informacion_adicional=palabras_clave,
+        ranking_categorias=ranking_categorias,
+        contenidos_relacionados=contenidos_relacionados,
     )

@@ -4,4 +4,5 @@ __pycache__/
 .env
 app/ml/modelo_techmind_v2_backup.joblib
 app/ml/modelo_techmind_v2.joblib
-.dockerignore
+app/ml/matriz_historica.pkl
+app/ml/sugerencias_botones.json
