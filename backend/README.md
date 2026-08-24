@@ -222,6 +222,8 @@ Coexiste con `GET /categorias` sin ser estrictamente redundante: `/categorias` d
 
 Por cada clasificación, se compara el texto de entrada contra la matriz completa y se devuelven hasta 3 documentos con similitud ≥ 0.10, ordenados de mayor a menor. Si `MATRIZ_HISTORICA_URL` no está configurada o la descarga falla, `/contenido` sigue respondiendo normal — solo con `contenidos_relacionados` vacío, sin romper el resto del endpoint.
 
+**Filtro adicional por confianza del clasificador:** el recomendador solo se consulta cuando la categoría ganadora tiene probabilidad ≥ 0.5. Con textos ambiguos o no técnicos, la similitud coseno puede devolver documentos con puntajes moderadamente altos (0.5–0.6) sin relación temática real — el modelo no tiene suficiente señal para saber de qué habla el texto, y el recomendador tampoco. Filtrar por la confianza de la clasificación evita mostrar relacionados falsos en esos casos. `contenidos_relacionados` viene vacío tanto si no hay nada parecido como si la clasificación en sí fue poco confiable — es el comportamiento esperado, no un error.
+
 No se guarda ni expone el texto completo de cada documento relacionado, solo `titulo`, `categoria` y `similitud` — mantiene la respuesta liviana y evita duplicar contenido pesado en cada petición.
 
 ---
