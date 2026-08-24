@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { classifyContent } from "../lib/api";
+import { classifyContent, getEjemplos, getSugerencia } from "../lib/api";
 import { getClassifications, saveClassification } from "../lib/storage";
 import ConfidenceRing from "../components/ConfidenceRing";
-import type { ClassifyResult } from "../types";
+import type { ClassifyResult, EjemploUso } from "../types";
 
 export default function LibraryPage({
   presetResult,
@@ -17,6 +17,16 @@ export default function LibraryPage({
     () => getClassifications()[0] ?? null,
   );
   const [viewingSaved, setViewingSaved] = useState(false);
+  const [ejemplos, setEjemplos] = useState<EjemploUso[]>([]);
+  const [loadingSugerencia, setLoadingSugerencia] = useState(false);
+
+  // Ejemplos reales para los chips. Si falla (backend caído, endpoint no
+  // disponible), simplemente no se muestran — no es un flujo crítico.
+  useEffect(() => {
+    getEjemplos()
+      .then(setEjemplos)
+      .catch(() => setEjemplos([]));
+  }, []);
 
   // Cuando llega una clasificación elegida desde History, la mostramos acá
   // (resultado + el título/texto originales) en vez de perder lo que el
@@ -29,13 +39,13 @@ export default function LibraryPage({
     setViewingSaved(true);
   }, [presetResult]);
 
-  async function handleSubmit() {
-    if (!texto.trim()) return;
+  async function classify(tituloVal: string, textoVal: string) {
+    if (!textoVal.trim()) return;
     setLoading(true);
     setError(null);
     setViewingSaved(false);
     try {
-      const data = await classifyContent(titulo, texto);
+      const data = await classifyContent(tituloVal, textoVal);
       const saved: ClassifyResult = {
         ...data,
         id: crypto.randomUUID(),
@@ -50,11 +60,47 @@ export default function LibraryPage({
     }
   }
 
+  function handleSubmit() {
+    classify(titulo, texto);
+  }
+
+  function handleEjemploClick(ejemplo: EjemploUso) {
+    setTitulo(ejemplo.titulo);
+    setTexto(ejemplo.texto);
+    classify(ejemplo.titulo, ejemplo.texto);
+  }
+
+  // No hay endpoint de detalle para un contenido relacionado: se reenvía su
+  // título como una nueva consulta a POST /contenido.
+  function handleRelacionadoClick(tituloRelacionado: string) {
+    setTitulo(tituloRelacionado);
+    setTexto(tituloRelacionado);
+    classify(tituloRelacionado, tituloRelacionado);
+  }
+
   function handleClear() {
     setTitulo("");
     setTexto("");
     setError(null);
     setViewingSaved(false);
+  }
+
+  // Solo llena los recuadros con la sugerencia — no clasifica automáticamente.
+  async function handleSugerenciaClick() {
+    setLoadingSugerencia(true);
+    setError(null);
+    try {
+      const sugerencia = await getSugerencia();
+      if (sugerencia) {
+        setTitulo(sugerencia.titulo);
+        setTexto(sugerencia.texto);
+        setViewingSaved(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo obtener una sugerencia.");
+    } finally {
+      setLoadingSugerencia(false);
+    }
   }
 
   return (
@@ -66,6 +112,27 @@ export default function LibraryPage({
           Pega un documento técnico, changelog o publicación. El modelo devuelve una categoría
           principal con su nivel de confianza y palabras clave extraídas.
         </p>
+
+        {ejemplos.length > 0 && (
+          <div className="mt-4">
+            <span className="font-mono text-xs tracking-wide text-muted">EJEMPLOS DE USO</span>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ejemplos.map((ejemplo, i) => (
+                <button
+                  key={`${ejemplo.titulo}-${i}`}
+                  type="button"
+                  onClick={() => handleEjemploClick(ejemplo)}
+                  disabled={loading}
+                  title={ejemplo.texto}
+                  className="group flex items-center gap-1.5 rounded-full border border-border px-3 py-1 font-mono text-xs text-subtle transition-colors hover:border-accent hover:text-white disabled:opacity-50"
+                >
+                  {ejemplo.titulo}
+                  <span className="text-muted group-hover:text-accent">· {ejemplo.categoria}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <label className="mt-6 block font-mono text-xs tracking-wide text-muted">TÍTULO</label>
         <input
@@ -110,6 +177,14 @@ export default function LibraryPage({
             Limpiar
           </button>
         </div>
+
+        <button
+          onClick={handleSugerenciaClick}
+          disabled={loadingSugerencia}
+          className="mt-3 w-full rounded-lg border border-dashed border-border px-5 py-2.5 text-sm font-semibold text-subtle transition-colors hover:border-accent hover:text-white disabled:opacity-50"
+        >
+          {loadingSugerencia ? "Buscando sugerencia..." : "💡 Probar con una sugerencia"}
+        </button>
       </section>
 
       {/* Resultado */}
@@ -141,6 +216,27 @@ export default function LibraryPage({
               </div>
             </div>
 
+            {(result.rankingCategorias?.length ?? 0) > 0 && (
+              <div className="mt-6">
+                <span className="font-mono text-xs tracking-wide text-muted">
+                  OTRAS CATEGORÍAS POSIBLES
+                </span>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {(result.rankingCategorias ?? []).map((c) => (
+                    <div
+                      key={c.categoria}
+                      className="flex items-center justify-between rounded-md border border-border bg-panel-2 px-3 py-1.5"
+                    >
+                      <span className="text-sm text-gray-300">{c.categoria}</span>
+                      <span className="font-mono text-xs text-muted">
+                        {(c.probabilidad * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {result.keywords.length > 0 && (
               <div className="mt-6">
                 <span className="font-mono text-xs tracking-wide text-muted">PALABRAS CLAVE</span>
@@ -152,6 +248,33 @@ export default function LibraryPage({
                     >
                       {kw}
                     </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(result.contenidosRelacionados?.length ?? 0) > 0 && (
+              <div className="mt-6">
+                <span className="font-mono text-xs tracking-wide text-muted">
+                  CONTENIDO RELACIONADO
+                </span>
+                <div className="mt-2 flex flex-col gap-2">
+                  {(result.contenidosRelacionados ?? []).map((rel, i) => (
+                    <button
+                      key={`${rel.titulo}-${i}`}
+                      type="button"
+                      onClick={() => handleRelacionadoClick(rel.titulo)}
+                      disabled={loading}
+                      className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-panel-2 px-3 py-2 text-left transition-colors hover:border-accent disabled:opacity-50"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-white">{rel.titulo}</p>
+                        <p className="font-mono text-xs text-muted">{rel.categoria}</p>
+                      </div>
+                      <span className="shrink-0 font-mono text-xs text-subtle">
+                        {(rel.similitud * 100).toFixed(1)}%
+                      </span>
+                    </button>
                   ))}
                 </div>
               </div>
