@@ -41,8 +41,20 @@ function writeWithFallback<T>(key: string, items: T[]): T[] {
   return [];
 }
 
+// Registros guardados antes de sumar ranking_categorias/contenidos_relacionados
+// al backend no tienen esos campos: se normalizan acá para que el resto de la
+// app pueda asumir siempre arrays (nunca undefined).
+function normalizeClassification(item: ClassifyResult): ClassifyResult {
+  return {
+    ...item,
+    keywords: item.keywords ?? [],
+    rankingCategorias: item.rankingCategorias ?? [],
+    contenidosRelacionados: item.contenidosRelacionados ?? [],
+  };
+}
+
 export function getClassifications(): ClassifyResult[] {
-  return readJSON<ClassifyResult[]>(CLASSIFICATIONS_KEY, []);
+  return readJSON<ClassifyResult[]>(CLASSIFICATIONS_KEY, []).map(normalizeClassification);
 }
 
 export function saveClassification(result: ClassifyResult) {
